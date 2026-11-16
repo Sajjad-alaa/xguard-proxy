@@ -4102,7 +4102,7 @@ dependencies = [
 [[package]]
 name = "xguard_certs"
 version = "0.0.0"
-source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=3afe0f2c6acf85733bbf948a832682151b19c196#3afe0f2c6acf85733bbf948a832682151b19c196"
+source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=679512e0ce0cee088f7be489f6cf50a534e2ccf5#679512e0ce0cee088f7be489f6cf50a534e2ccf5"
 dependencies = [
  "base64 0.23.1",
  "chrono",
@@ -4116,7 +4116,7 @@ dependencies = [
 [[package]]
 name = "xguard_grpc_tls"
 version = "0.0.0"
-source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=3afe0f2c6acf85733bbf948a832682151b19c196#3afe0f2c6acf85733bbf948a832682151b19c196"
+source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=679512e0ce0cee088f7be489f6cf50a534e2ccf5#679512e0ce0cee088f7be489f6cf50a534e2ccf5"
 dependencies = [
  "http",
  "hyper-rustls",
@@ -4132,7 +4132,7 @@ dependencies = [
 [[package]]
 name = "xguard_version"
 version = "0.0.0"
-source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=3afe0f2c6acf85733bbf948a832682151b19c196#3afe0f2c6acf85733bbf948a832682151b19c196"
+source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=679512e0ce0cee088f7be489f6cf50a534e2ccf5#679512e0ce0cee088f7be489f6cf50a534e2ccf5"
 dependencies = [
  "axum",
  "http",

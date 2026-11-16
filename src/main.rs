@@ -1,5 +1,6 @@
 use std::{fs::read_to_string, io::ErrorKind, path::Path, sync::Arc};
 
+use tokio::sync::{Mutex, mpsc};
 use xguard_proxy::{
     VERSION,
     config::get_env_config,
@@ -8,7 +9,6 @@ use xguard_proxy::{
     logging::init_tracing,
 };
 use xguard_version::Version;
-use tokio::sync::{Mutex, mpsc};
 
 fn read_optional_cert_file(
     file_path: &Path,

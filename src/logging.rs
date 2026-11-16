@@ -1,12 +1,5 @@
 use std::fmt::Write as _;
 
-use xguard_version::{
-    ComponentInfo, XGuardVersionError, Version,
-    tracing::{
-        VersionFieldLayer, VersionFilteredFields, VersionSuffixWriter, build_version_suffix,
-        extract_version_info_from_context,
-    },
-};
 use log::LevelFilter;
 use tokio::sync::mpsc::Sender;
 use tracing::{Event, Level, Subscriber};
@@ -20,6 +13,13 @@ use tracing_subscriber::{
     layer::SubscriberExt,
     registry::LookupSpan,
     util::SubscriberInitExt,
+};
+use xguard_version::{
+    ComponentInfo, Version, XGuardVersionError,
+    tracing::{
+        VersionFieldLayer, VersionFilteredFields, VersionSuffixWriter, build_version_suffix,
+        extract_version_info_from_context,
+    },
 };
 
 use crate::proto::LogEntry;

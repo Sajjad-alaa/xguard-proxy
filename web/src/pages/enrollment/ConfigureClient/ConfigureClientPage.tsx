@@ -11,6 +11,8 @@ import { ContainerWithIcon } from '../../../shared/components/ContainerWithIcon/
 import { Page } from '../../../shared/components/Page/Page';
 import { EnrollmentStep } from '../../../shared/components/Step/Step';
 import { externalLink } from '../../../shared/consts';
+import { getClientArtifactsQueryOptions } from '../../../shared/query/queryOptions';
+import { openClientLink } from '../../../shared/utils/openVirtualLink';
 import { Button } from '../../../shared/xguard-ui/components/Button/Button';
 import { CopyField } from '../../../shared/xguard-ui/components/CopyField/CopyField';
 import { Divider } from '../../../shared/xguard-ui/components/Divider/Divider';
@@ -21,8 +23,6 @@ import { IconButtonMenu } from '../../../shared/xguard-ui/components/IconButtonM
 import type { MenuItemsGroup } from '../../../shared/xguard-ui/components/Menu/types';
 import { SizedBox } from '../../../shared/xguard-ui/components/SizedBox/SizedBox';
 import { ThemeSpacing } from '../../../shared/xguard-ui/types';
-import { getClientArtifactsQueryOptions } from '../../../shared/query/queryOptions';
-import { openClientLink } from '../../../shared/utils/openVirtualLink';
 
 const AppleHelpModal = lazy(async () => ({
   default: (await import('../../../shared/components/AppleHelpModal/AppleHelpModal'))

@@ -12,6 +12,8 @@ import { Page } from '../../shared/components/Page/Page';
 import { PageNavigation } from '../../shared/components/PageNavigation/PageNavigation';
 import { EnrollmentStep } from '../../shared/components/Step/Step';
 import { externalLink } from '../../shared/consts';
+import { getClientArtifactsQueryOptions } from '../../shared/query/queryOptions';
+import { openClientLink } from '../../shared/utils/openVirtualLink';
 import { Button } from '../../shared/xguard-ui/components/Button/Button';
 import { ButtonMenu } from '../../shared/xguard-ui/components/ButtonMenu/MenuButton';
 import { Icon } from '../../shared/xguard-ui/components/Icon';
@@ -23,8 +25,6 @@ import { ModalControls } from '../../shared/xguard-ui/components/ModalControls/M
 import { SizedBox } from '../../shared/xguard-ui/components/SizedBox/SizedBox';
 import { ThemeSpacing } from '../../shared/xguard-ui/types';
 import { isPresent } from '../../shared/xguard-ui/utils/isPresent';
-import { getClientArtifactsQueryOptions } from '../../shared/query/queryOptions';
-import { openClientLink } from '../../shared/utils/openVirtualLink';
 import androidIcon from './assets/android.png';
 import iosIcon from './assets/ios.png';
 import laptopIcon from './assets/laptop.png';

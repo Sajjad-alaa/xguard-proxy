@@ -1,23 +1,20 @@
-import { useLoaderData, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { m } from '../../../paraglide/messages';
 import { ContainerWithIcon } from '../../../shared/components/ContainerWithIcon/ContainerWithIcon';
 import { Page } from '../../../shared/components/Page/Page';
 import { PageNavigation } from '../../../shared/components/PageNavigation/PageNavigation';
 import { EnrollmentStep } from '../../../shared/components/Step/Step';
-import { Divider } from '../../../shared/xguard-ui/components/Divider/Divider';
 import './style.scss';
 import { revalidateLogic } from '@tanstack/react-form';
 import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import z from 'zod';
 import { api } from '../../../shared/api/api';
-import { ExternalProviderButton } from '../../../shared/xguard-ui/components/ExternalProviderButton/ExternalProviderButton';
-import { SizedBox } from '../../../shared/xguard-ui/components/SizedBox/SizedBox';
-import { ThemeSpacing } from '../../../shared/xguard-ui/types';
-import { isPresent } from '../../../shared/xguard-ui/utils/isPresent';
 import { useAppForm } from '../../../shared/form';
 import { useEnrollmentStore } from '../../../shared/hooks/useEnrollmentStore';
 import { getAppInfoQueryOptions } from '../../../shared/query/queryOptions';
+import { SizedBox } from '../../../shared/xguard-ui/components/SizedBox/SizedBox';
+import { ThemeSpacing } from '../../../shared/xguard-ui/types';
 
 const formSchema = z.object({
   token: z.string().trim().min(1, m.form_error_required()),
@@ -31,9 +28,6 @@ const defaultValues: FormFields = {
 
 export const EnrollmentStartPage = () => {
   const navigate = useNavigate();
-  const loaderData = useLoaderData({
-    from: '/enrollment-start',
-  });
   const setEnrollment = useEnrollmentStore((s) => s.setState);
   const { data: appInfo } = useQuery(getAppInfoQueryOptions);
 
@@ -93,29 +87,6 @@ export const EnrollmentStartPage = () => {
         <p>{m.enrollment_start_subtitle()}</p>
       </header>
       <SizedBox height={ThemeSpacing.Xl3} />
-      {isPresent(loaderData?.url) && isPresent(loaderData.button_display_name) && (
-        <>
-          <ContainerWithIcon icon="globe">
-            <header>
-              <h5>{m.enrollment_start_external_title()}</h5>
-              <SizedBox height={ThemeSpacing.Xs} />
-              <p>{m.enrollment_start_external_subtitle()}</p>
-            </header>
-            <div className="openid-link">
-              <a href={loaderData.url} target="_self" rel="noopener noreferrer">
-                <ExternalProviderButton
-                  variant="default"
-                  provider={loaderData.provider_kind ?? 'custom'}
-                  text={m.cmp_openid_button({
-                    provider: loaderData.button_display_name,
-                  })}
-                />
-              </a>
-            </div>
-          </ContainerWithIcon>
-          <Divider text={m.misc_or()} orientation="horizontal" />
-        </>
-      )}
       <ContainerWithIcon icon="file">
         <header>
           <h5>{m.enrollment_start_internal_title()}</h5>

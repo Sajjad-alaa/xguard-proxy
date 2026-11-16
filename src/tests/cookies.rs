@@ -12,10 +12,7 @@ use tower::ServiceExt;
 use crate::{
     grpc::ProxyServer,
     http::{AppState, ENROLLMENT_COOKIE_NAME, PASSWORD_RESET_COOKIE_NAME, build_router},
-    proto::{
-        AuthInfoResponse, CoreRequest, EnrollmentStartResponse, OpenIdProviderKind,
-        PasswordResetStartResponse, core_response,
-    },
+    proto::{CoreRequest, EnrollmentStartResponse, PasswordResetStartResponse, core_response},
     tests::support::{cookie_key, test_proxy_server, test_public_settings},
 };
 
@@ -95,16 +92,6 @@ fn enrollment_response() -> core_response::Payload {
 fn password_reset_response() -> core_response::Payload {
     core_response::Payload::PasswordResetStart(PasswordResetStartResponse {
         deadline_timestamp: 4_000_000_000,
-    })
-}
-
-fn auth_info_response() -> core_response::Payload {
-    core_response::Payload::AuthInfo(AuthInfoResponse {
-        url: "https://idp.example.com/authorize".to_owned(),
-        csrf_token: "csrf-token".to_owned(),
-        nonce: "nonce".to_owned(),
-        button_display_name: None,
-        provider_kind: OpenIdProviderKind::Custom as i32,
     })
 }
 
@@ -299,31 +286,6 @@ async fn test_password_reset_cookie_attributes_follow_core_public_url() {
             secure,
         );
     }
-}
-
-#[tokio::test]
-async fn test_oidc_cookies_remain_secure_over_http() {
-    let cookies = request_cookies(
-        Some("http://proxy.example.com"),
-        "/api/v1/openid/auth_info",
-        r#"{"type":"enrollment"}"#,
-        auth_info_response(),
-    )
-    .await;
-
-    assert_eq!(cookies.len(), 2);
-    let nonce_cookie = cookies
-        .iter()
-        .find(|cookie| cookie.name() == "nonce_proxy")
-        .expect("Nonce cookie was not set");
-    let csrf_cookie = cookies
-        .iter()
-        .find(|cookie| cookie.name() == "csrf_proxy")
-        .expect("CSRF cookie was not set");
-    assert_cookie(nonce_cookie, "nonce_proxy", "/api/v1/openid/callback", true);
-    assert_cookie(csrf_cookie, "csrf_proxy", "/api/v1/openid/callback", true);
-    assert_eq!(nonce_cookie.max_age(), Some(time::Duration::days(1)));
-    assert_eq!(csrf_cookie.max_age(), Some(time::Duration::days(1)));
 }
 
 #[tokio::test]

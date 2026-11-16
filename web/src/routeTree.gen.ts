@@ -18,13 +18,9 @@ import { Route as OpenDesktopRouteImport } from './routes/open-desktop'
 import { Route as PasswordResetRouteImport } from './routes/password-reset'
 import { Route as ServerWarningRouteImport } from './routes/server-warning'
 import { Route as SessionEndRouteImport } from './routes/session-end'
-import { Route as OpenidCallbackRouteImport } from './routes/openid/callback'
-import { Route as OpenidErrorRouteImport } from './routes/openid/error'
 import { Route as PasswordIndexRouteImport } from './routes/password/index'
 import { Route as PasswordFinishRouteImport } from './routes/password/finish'
 import { Route as PasswordSentRouteImport } from './routes/password/sent'
-import { Route as OpenidMfaIndexRouteImport } from './routes/openid/mfa/index'
-import { Route as OpenidMfaCallbackRouteImport } from './routes/openid/mfa/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -71,16 +67,6 @@ const SessionEndRoute = SessionEndRouteImport.update({
   path: '/session-end',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OpenidCallbackRoute = OpenidCallbackRouteImport.update({
-  id: '/openid/callback',
-  path: '/openid/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpenidErrorRoute = OpenidErrorRouteImport.update({
-  id: '/openid/error',
-  path: '/openid/error',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PasswordIndexRoute = PasswordIndexRouteImport.update({
   id: '/password/',
   path: '/password/',
@@ -96,16 +82,6 @@ const PasswordSentRoute = PasswordSentRouteImport.update({
   path: '/password/sent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OpenidMfaIndexRoute = OpenidMfaIndexRouteImport.update({
-  id: '/openid/mfa/',
-  path: '/openid/mfa/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpenidMfaCallbackRoute = OpenidMfaCallbackRouteImport.update({
-  id: '/openid/mfa/callback',
-  path: '/openid/mfa/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,13 +93,9 @@ export interface FileRoutesByFullPath {
   '/password-reset': typeof PasswordResetRoute
   '/server-warning': typeof ServerWarningRoute
   '/session-end': typeof SessionEndRoute
-  '/openid/callback': typeof OpenidCallbackRoute
-  '/openid/error': typeof OpenidErrorRoute
   '/password/finish': typeof PasswordFinishRoute
   '/password/sent': typeof PasswordSentRoute
   '/password/': typeof PasswordIndexRoute
-  '/openid/mfa/callback': typeof OpenidMfaCallbackRoute
-  '/openid/mfa/': typeof OpenidMfaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -135,13 +107,9 @@ export interface FileRoutesByTo {
   '/password-reset': typeof PasswordResetRoute
   '/server-warning': typeof ServerWarningRoute
   '/session-end': typeof SessionEndRoute
-  '/openid/callback': typeof OpenidCallbackRoute
-  '/openid/error': typeof OpenidErrorRoute
   '/password/finish': typeof PasswordFinishRoute
   '/password/sent': typeof PasswordSentRoute
   '/password': typeof PasswordIndexRoute
-  '/openid/mfa/callback': typeof OpenidMfaCallbackRoute
-  '/openid/mfa': typeof OpenidMfaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -154,13 +122,9 @@ export interface FileRoutesById {
   '/password-reset': typeof PasswordResetRoute
   '/server-warning': typeof ServerWarningRoute
   '/session-end': typeof SessionEndRoute
-  '/openid/callback': typeof OpenidCallbackRoute
-  '/openid/error': typeof OpenidErrorRoute
   '/password/finish': typeof PasswordFinishRoute
   '/password/sent': typeof PasswordSentRoute
   '/password/': typeof PasswordIndexRoute
-  '/openid/mfa/callback': typeof OpenidMfaCallbackRoute
-  '/openid/mfa/': typeof OpenidMfaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -174,13 +138,9 @@ export interface FileRouteTypes {
     | '/password-reset'
     | '/server-warning'
     | '/session-end'
-    | '/openid/callback'
-    | '/openid/error'
     | '/password/finish'
     | '/password/sent'
     | '/password/'
-    | '/openid/mfa/callback'
-    | '/openid/mfa/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -192,13 +152,9 @@ export interface FileRouteTypes {
     | '/password-reset'
     | '/server-warning'
     | '/session-end'
-    | '/openid/callback'
-    | '/openid/error'
     | '/password/finish'
     | '/password/sent'
     | '/password'
-    | '/openid/mfa/callback'
-    | '/openid/mfa'
   id:
     | '__root__'
     | '/'
@@ -210,13 +166,9 @@ export interface FileRouteTypes {
     | '/password-reset'
     | '/server-warning'
     | '/session-end'
-    | '/openid/callback'
-    | '/openid/error'
     | '/password/finish'
     | '/password/sent'
     | '/password/'
-    | '/openid/mfa/callback'
-    | '/openid/mfa/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -229,13 +181,9 @@ export interface RootRouteChildren {
   PasswordResetRoute: typeof PasswordResetRoute
   ServerWarningRoute: typeof ServerWarningRoute
   SessionEndRoute: typeof SessionEndRoute
-  OpenidCallbackRoute: typeof OpenidCallbackRoute
-  OpenidErrorRoute: typeof OpenidErrorRoute
   PasswordFinishRoute: typeof PasswordFinishRoute
   PasswordSentRoute: typeof PasswordSentRoute
   PasswordIndexRoute: typeof PasswordIndexRoute
-  OpenidMfaCallbackRoute: typeof OpenidMfaCallbackRoute
-  OpenidMfaIndexRoute: typeof OpenidMfaIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -303,20 +251,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionEndRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/openid/callback': {
-      id: '/openid/callback'
-      path: '/openid/callback'
-      fullPath: '/openid/callback'
-      preLoaderRoute: typeof OpenidCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/openid/error': {
-      id: '/openid/error'
-      path: '/openid/error'
-      fullPath: '/openid/error'
-      preLoaderRoute: typeof OpenidErrorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/password/': {
       id: '/password/'
       path: '/password'
@@ -338,20 +272,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PasswordSentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/openid/mfa/': {
-      id: '/openid/mfa/'
-      path: '/openid/mfa'
-      fullPath: '/openid/mfa/'
-      preLoaderRoute: typeof OpenidMfaIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/openid/mfa/callback': {
-      id: '/openid/mfa/callback'
-      path: '/openid/mfa/callback'
-      fullPath: '/openid/mfa/callback'
-      preLoaderRoute: typeof OpenidMfaCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -365,13 +285,9 @@ const rootRouteChildren: RootRouteChildren = {
   PasswordResetRoute: PasswordResetRoute,
   ServerWarningRoute: ServerWarningRoute,
   SessionEndRoute: SessionEndRoute,
-  OpenidCallbackRoute: OpenidCallbackRoute,
-  OpenidErrorRoute: OpenidErrorRoute,
   PasswordFinishRoute: PasswordFinishRoute,
   PasswordSentRoute: PasswordSentRoute,
   PasswordIndexRoute: PasswordIndexRoute,
-  OpenidMfaCallbackRoute: OpenidMfaCallbackRoute,
-  OpenidMfaIndexRoute: OpenidMfaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

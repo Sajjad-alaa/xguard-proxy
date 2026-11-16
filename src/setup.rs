@@ -8,10 +8,6 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use xguard_version::{
-    XGuardComponent, Version,
-    server::{XGuardVersionLayer, grpc::XGuardVersionInterceptor},
-};
 use rustls_pki_types::{CertificateDer, UnixTime};
 use tokio::{
     fs::OpenOptions,
@@ -21,6 +17,10 @@ use tokio::{
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tonic::{Request, Response, Status, service::InterceptorLayer, transport::Server};
 use webpki::{KeyUsage, anchor_from_trusted_cert};
+use xguard_version::{
+    Version, XGuardComponent,
+    server::{XGuardVersionLayer, grpc::XGuardVersionInterceptor},
+};
 
 use crate::{
     LogsReceiver, MIN_CORE_VERSION, VERSION,

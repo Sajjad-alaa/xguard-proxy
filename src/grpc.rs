@@ -11,12 +11,6 @@ use std::{
 };
 
 use axum_extra::extract::cookie::Key;
-use xguard_certs::{CertificateError, CertificateInfo};
-use xguard_grpc_tls::{certs::server_tls_config, server::certificate_serial_interceptor};
-use xguard_version::{
-    ComponentInfo, XGuardComponent, Version, get_tracing_variables,
-    server::{XGuardVersionLayer, grpc::XGuardVersionInterceptor},
-};
 use tokio::{
     fs::remove_file,
     sync::{broadcast, mpsc, oneshot},
@@ -26,6 +20,12 @@ use tonic::{Request, Response, Status, Streaming, service::InterceptorLayer, tra
 use tower::ServiceBuilder;
 use tracing::Instrument;
 use url::Url;
+use xguard_certs::{CertificateError, CertificateInfo};
+use xguard_grpc_tls::{certs::server_tls_config, server::certificate_serial_interceptor};
+use xguard_version::{
+    ComponentInfo, Version, XGuardComponent, get_tracing_variables,
+    server::{XGuardVersionLayer, grpc::XGuardVersionInterceptor},
+};
 
 use crate::{
     LogsReceiver, MIN_CORE_VERSION, VERSION, acme,
@@ -318,9 +318,7 @@ impl ProxyServer {
         } else {
             error!("XGuard Core is not connected");
             self.connected.store(false, Ordering::Relaxed);
-            Err(ApiError::Unexpected(
-                "XGuard Core is not connected".into(),
-            ))
+            Err(ApiError::Unexpected("XGuard Core is not connected".into()))
         }
     }
 

@@ -3,11 +3,6 @@ import type {
   AppInfo,
   EmptyApiResponse,
   EnrollmentStartResponse,
-  OpenIdAuthInfoRequest,
-  OpenIdAuthInfoResponse,
-  OpenIdCallbackRequest,
-  OpenIdCallbackResponse,
-  OpenIdMfaCallbackRequest,
   PasswordResetFinishRequest,
   PasswordResetStartRequest,
   PasswordResetStartResponse,
@@ -25,13 +20,6 @@ const api = {
     ),
     start: post<TokenRequest, PasswordResetStartResponse>('/password-reset/start'),
     finish: post<PasswordResetFinishRequest, EmptyApiResponse>('/password-reset/reset'),
-  },
-  openId: {
-    authInfo: post<OpenIdAuthInfoRequest, OpenIdAuthInfoResponse>('openid/auth_info'),
-    enrollmentCallback: post<OpenIdCallbackRequest, OpenIdCallbackResponse>(
-      'openid/callback',
-    ),
-    mfaCallback: post<OpenIdMfaCallbackRequest, EmptyApiResponse>('openid/callback/mfa'),
   },
 } as const;
 

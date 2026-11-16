@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
-use xguard_version::Version;
 use tokio::sync::mpsc;
+use xguard_version::Version;
 
 use crate::proto::LogEntry;
 
 mod acme;
 pub mod assets;
 pub mod config;
-mod enterprise;
 mod error;
 pub mod grpc;
 mod handlers;
@@ -33,14 +32,6 @@ pub(crate) mod generated {
             }
         }
 
-        pub(crate) mod enterprise {
-            pub(crate) mod posture {
-                pub mod v2 {
-                    tonic::include_proto!("xguard.enterprise.posture.v2");
-                }
-            }
-        }
-
         pub mod client_types {
             tonic::include_proto!("xguard.client_types");
         }
@@ -48,9 +39,7 @@ pub(crate) mod generated {
 }
 
 pub(crate) mod proto {
-    pub(crate) use crate::generated::xguard::{
-        client_types::*, common::v2::*, enterprise::posture::v2::*, proxy::v2::*,
-    };
+    pub(crate) use crate::generated::xguard::{client_types::*, common::v2::*, proxy::v2::*};
 }
 
 #[macro_use]

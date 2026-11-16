@@ -3,8 +3,8 @@ import z from 'zod';
 import { HomePage } from '../pages/Home/HomePage';
 import { api } from '../shared/api/api';
 import type { ErrorResponse } from '../shared/api/types';
-import { isPresent } from '../shared/xguard-ui/utils/isPresent';
 import { useEnrollmentStore } from '../shared/hooks/useEnrollmentStore';
+import { isPresent } from '../shared/xguard-ui/utils/isPresent';
 
 const searchSchema = z.object({
   token: z.string().optional(),

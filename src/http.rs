@@ -29,7 +29,6 @@ use axum_extra::extract::{
 use axum_server::tls_rustls::RustlsConfig;
 use clap::crate_version;
 use cookie::CookieBuilder;
-use xguard_version::{Version, server::XGuardVersionLayer};
 use serde::Serialize;
 use tokio::{
     sync::{broadcast, mpsc, oneshot, watch},
@@ -43,12 +42,12 @@ use tower_http::{
     trace::{self, TraceLayer},
 };
 use tracing::{Level, info_span};
+use xguard_version::{Version, server::XGuardVersionLayer};
 
 use crate::{
     LogsReceiver, VERSION,
     assets::{index, web_asset},
     config::EnvConfig,
-    enterprise::handlers::{desktop_client_posture, openid_login},
     error::ApiError,
     grpc::{ProxyServer, TlsConfig},
     handlers::{desktop_client_mfa, enrollment, mfa_config, mfa_flow, password_reset, polling},
@@ -492,8 +491,6 @@ pub(crate) fn api_router() -> Router<AppState> {
             .nest("/client-mfa", desktop_client_mfa::router())
             .nest("/mfa-flow", mfa_flow::router())
             .nest("/mfa-config", mfa_config::router())
-            .nest("/openid", openid_login::router())
-            .nest("/posture", desktop_client_posture::router())
             .route("/poll", post(polling::info))
             .route("/health", get(healthcheck))
             .route("/health-grpc", get(healthcheckgrpc))

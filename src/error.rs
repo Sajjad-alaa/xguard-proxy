@@ -41,8 +41,6 @@ pub enum ApiError {
     OidcNotCompleted(String),
     #[error("Bad request: {0}")]
     NotFound(String),
-    #[error("PostureRejected: {0:?}")]
-    PostureRejected(Vec<String>),
     #[error("Failed to get client IP address")]
     ClientIpError,
     #[error("{0}")]
@@ -63,7 +61,6 @@ impl ApiError {
                 (StatusCode::PRECONDITION_REQUIRED, msg)
             }
             Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
-            Self::PostureRejected(reasons) => (StatusCode::FORBIDDEN, reasons.join(", ")),
             Self::WithCode(inner, _) => inner.status_and_message(),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,

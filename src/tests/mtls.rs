@@ -8,9 +8,6 @@ use std::{
     time::Duration,
 };
 
-use xguard_certs::{
-    CertificateAuthority, Csr, PemLabel, cert_der_to_pem, der_to_pem, generate_key_pair,
-};
 use futures_util::stream;
 use rustls::crypto::aws_lc_rs;
 use tokio::{
@@ -24,6 +21,9 @@ use tonic::{
     Code, Request, Status,
     service::Interceptor,
     transport::{Certificate, Channel, ClientTlsConfig, Endpoint, Identity},
+};
+use xguard_certs::{
+    CertificateAuthority, Csr, PemLabel, cert_der_to_pem, der_to_pem, generate_key_pair,
 };
 
 use super::support::{cookie_key, test_proxy_server};
