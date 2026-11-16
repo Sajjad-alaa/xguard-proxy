@@ -1,5 +1,5 @@
 import { createFormHook } from '@tanstack/react-form';
-import { FormInput } from './defguard-ui/components/form/FormInput/FormInput';
+import { FormInput } from './xguard-ui/components/form/FormInput/FormInput';
 import { fieldContext, formContext } from './form-context';
 
 export { useFieldContext, useFormContext } from './form-context';

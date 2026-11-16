@@ -738,100 +738,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06"
 
 [[package]]
-name = "defguard-proxy"
-version = "2.2.0"
-dependencies = [
- "ammonia",
- "anyhow",
- "axum",
- "axum-client-ip",
- "axum-extra",
- "axum-server",
- "base64 0.23.1",
- "chrono",
- "clap",
- "cookie",
- "defguard_certs",
- "defguard_grpc_tls",
- "defguard_version",
- "dotenvy",
- "futures-util",
- "instant-acme",
- "log",
- "mime_guess",
- "prost",
- "reqwest",
- "rust-embed",
- "rustls",
- "rustls-pki-types",
- "rustls-webpki",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "time",
- "tokio",
- "tokio-stream",
- "toml",
- "tonic",
- "tonic-prost",
- "tonic-prost-build",
- "tower",
- "tower-http 0.7.1",
- "tower_governor",
- "tracing",
- "tracing-subscriber",
- "url",
- "vergen-git2",
-]
-
-[[package]]
-name = "defguard_certs"
-version = "0.0.0"
-source = "git+https://github.com/DefGuard/defguard.git?rev=442048165cdd0a084f5d14e7b268fbc7a9332775#442048165cdd0a084f5d14e7b268fbc7a9332775"
-dependencies = [
- "base64 0.23.1",
- "chrono",
- "rcgen",
- "rustls-pki-types",
- "thiserror 2.0.21",
- "time",
- "x509-parser",
-]
-
-[[package]]
-name = "defguard_grpc_tls"
-version = "0.0.0"
-source = "git+https://github.com/DefGuard/defguard.git?rev=442048165cdd0a084f5d14e7b268fbc7a9332775#442048165cdd0a084f5d14e7b268fbc7a9332775"
-dependencies = [
- "http",
- "hyper-rustls",
- "rustls",
- "thiserror 2.0.21",
- "tokio",
- "tonic",
- "tower-service",
- "tracing",
- "x509-parser",
-]
-
-[[package]]
-name = "defguard_version"
-version = "0.0.0"
-source = "git+https://github.com/DefGuard/defguard.git?rev=442048165cdd0a084f5d14e7b268fbc7a9332775#442048165cdd0a084f5d14e7b268fbc7a9332775"
-dependencies = [
- "axum",
- "http",
- "os_info",
- "semver",
- "serde",
- "thiserror 2.0.21",
- "tonic",
- "tower",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "der-parser"
 version = "10.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4144,6 +4050,100 @@ dependencies = [
  "rusticata-macros",
  "thiserror 2.0.21",
  "time",
+]
+
+[[package]]
+name = "xguard-proxy"
+version = "2.2.0"
+dependencies = [
+ "ammonia",
+ "anyhow",
+ "axum",
+ "axum-client-ip",
+ "axum-extra",
+ "axum-server",
+ "base64 0.23.1",
+ "chrono",
+ "clap",
+ "cookie",
+ "dotenvy",
+ "futures-util",
+ "instant-acme",
+ "log",
+ "mime_guess",
+ "prost",
+ "reqwest",
+ "rust-embed",
+ "rustls",
+ "rustls-pki-types",
+ "rustls-webpki",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "time",
+ "tokio",
+ "tokio-stream",
+ "toml",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
+ "tower",
+ "tower-http 0.7.1",
+ "tower_governor",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "vergen-git2",
+ "xguard_certs",
+ "xguard_grpc_tls",
+ "xguard_version",
+]
+
+[[package]]
+name = "xguard_certs"
+version = "0.0.0"
+source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=3afe0f2c6acf85733bbf948a832682151b19c196#3afe0f2c6acf85733bbf948a832682151b19c196"
+dependencies = [
+ "base64 0.23.1",
+ "chrono",
+ "rcgen",
+ "rustls-pki-types",
+ "thiserror 2.0.21",
+ "time",
+ "x509-parser",
+]
+
+[[package]]
+name = "xguard_grpc_tls"
+version = "0.0.0"
+source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=3afe0f2c6acf85733bbf948a832682151b19c196#3afe0f2c6acf85733bbf948a832682151b19c196"
+dependencies = [
+ "http",
+ "hyper-rustls",
+ "rustls",
+ "thiserror 2.0.21",
+ "tokio",
+ "tonic",
+ "tower-service",
+ "tracing",
+ "x509-parser",
+]
+
+[[package]]
+name = "xguard_version"
+version = "0.0.0"
+source = "git+https://github.com/Sajjad-alaa/xguard-core.git?rev=3afe0f2c6acf85733bbf948a832682151b19c196#3afe0f2c6acf85733bbf948a832682151b19c196"
+dependencies = [
+ "axum",
+ "http",
+ "os_info",
+ "semver",
+ "serde",
+ "thiserror 2.0.21",
+ "tonic",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

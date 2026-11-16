@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use defguard_version::Version;
+use xguard_version::Version;
 use tokio::sync::mpsc;
 
 use crate::proto::LogEntry;
@@ -20,35 +20,35 @@ mod setup;
 mod tests;
 
 pub(crate) mod generated {
-    pub(crate) mod defguard {
+    pub(crate) mod xguard {
         pub(crate) mod proxy {
             pub(crate) mod v2 {
-                tonic::include_proto!("defguard.proxy.v2");
+                tonic::include_proto!("xguard.proxy.v2");
             }
         }
 
         pub(crate) mod common {
             pub(crate) mod v2 {
-                tonic::include_proto!("defguard.common.v2");
+                tonic::include_proto!("xguard.common.v2");
             }
         }
 
         pub(crate) mod enterprise {
             pub(crate) mod posture {
                 pub mod v2 {
-                    tonic::include_proto!("defguard.enterprise.posture.v2");
+                    tonic::include_proto!("xguard.enterprise.posture.v2");
                 }
             }
         }
 
         pub mod client_types {
-            tonic::include_proto!("defguard.client_types");
+            tonic::include_proto!("xguard.client_types");
         }
     }
 }
 
 pub(crate) mod proto {
-    pub(crate) use crate::generated::defguard::{
+    pub(crate) use crate::generated::xguard::{
         client_types::*, common::v2::*, enterprise::posture::v2::*, proxy::v2::*,
     };
 }

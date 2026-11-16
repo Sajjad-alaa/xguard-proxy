@@ -17,7 +17,7 @@ fn default_log_level() -> LevelFilter {
 }
 
 fn default_cert_dir() -> PathBuf {
-    PathBuf::from("/etc/defguard/certs")
+    PathBuf::from("/etc/xguard/certs")
 }
 
 fn default_https_port() -> u16 {
@@ -54,21 +54,21 @@ pub struct EnvConfig {
     #[arg(
         long,
         short = 'p',
-        env = "DEFGUARD_PROXY_HTTP_PORT",
+        env = "XGUARD_PROXY_HTTP_PORT",
         default_value_t = 8080
     )]
     #[serde(default = "default_http_port")]
     pub http_port: u16,
 
     // port the API server will listen on
-    #[arg(long, env = "DEFGUARD_PROXY_GRPC_PORT", default_value_t = 50051)]
+    #[arg(long, env = "XGUARD_PROXY_GRPC_PORT", default_value_t = 50051)]
     #[serde(default = "default_grpc_port")]
     pub grpc_port: u16,
 
     /// HTTP/2 keepalive ping interval for the gRPC server, in seconds.
     #[arg(
         long,
-        env = "DEFGUARD_PROXY_GRPC_KEEPALIVE_INTERVAL_SECONDS",
+        env = "XGUARD_PROXY_GRPC_KEEPALIVE_INTERVAL_SECONDS",
         default_value_t = DEFAULT_GRPC_KEEPALIVE_INTERVAL_SECONDS
     )]
     #[serde(default = "default_grpc_keepalive_interval_seconds")]
@@ -77,21 +77,21 @@ pub struct EnvConfig {
     /// Time to wait for an HTTP/2 keepalive ping acknowledgement, in seconds.
     #[arg(
         long,
-        env = "DEFGUARD_PROXY_GRPC_KEEPALIVE_TIMEOUT_SECONDS",
+        env = "XGUARD_PROXY_GRPC_KEEPALIVE_TIMEOUT_SECONDS",
         default_value_t = DEFAULT_GRPC_KEEPALIVE_TIMEOUT_SECONDS
     )]
     #[serde(default = "default_grpc_keepalive_timeout_seconds")]
     pub grpc_keepalive_timeout_seconds: NonZeroU64,
 
-    #[arg(long, env = "DEFGUARD_PROXY_LOG_LEVEL", default_value_t = LevelFilter::Info)]
+    #[arg(long, env = "XGUARD_PROXY_LOG_LEVEL", default_value_t = LevelFilter::Info)]
     #[serde(default = "default_log_level")]
     pub log_level: LevelFilter,
 
-    #[arg(long, env = "DEFGUARD_PROXY_RATELIMIT_PERSECOND", default_value_t = 0)]
+    #[arg(long, env = "XGUARD_PROXY_RATELIMIT_PERSECOND", default_value_t = 0)]
     #[serde(default = "default_rate_limit_per_second")]
     pub rate_limit_per_second: u64,
 
-    #[arg(long, env = "DEFGUARD_PROXY_RATELIMIT_BURST", default_value_t = 0)]
+    #[arg(long, env = "XGUARD_PROXY_RATELIMIT_BURST", default_value_t = 0)]
     #[serde(default = "default_rate_limit_burst")]
     pub rate_limit_burst: u32,
 
@@ -100,31 +100,31 @@ pub struct EnvConfig {
     #[serde(skip)]
     config_path: Option<PathBuf>,
 
-    #[arg(long, env = "DEFGUARD_HTTP_BIND_ADDRESS")]
+    #[arg(long, env = "XGUARD_HTTP_BIND_ADDRESS")]
     #[serde(default)]
     pub http_bind_address: Option<IpAddr>,
 
-    #[arg(long, env = "DEFGUARD_GRPC_BIND_ADDRESS")]
+    #[arg(long, env = "XGUARD_GRPC_BIND_ADDRESS")]
     #[serde(default)]
     pub grpc_bind_address: Option<IpAddr>,
 
     // TODO: On different platforms this may be different
     #[arg(
         long,
-        env = "DEFGUARD_PROXY_CERT_DIR",
-        default_value = "/etc/defguard/certs"
+        env = "XGUARD_PROXY_CERT_DIR",
+        default_value = "/etc/xguard/certs"
     )]
     #[serde(default = "default_cert_dir")]
     pub cert_dir: PathBuf,
 
     /// Port for the HTTPS server. When Core sends TLS certificates over gRPC, the HTTP
     /// server is restarted on this port using those certificates.
-    #[arg(long, env = "DEFGUARD_PROXY_HTTPS_PORT", default_value_t = 443)]
+    #[arg(long, env = "XGUARD_PROXY_HTTPS_PORT", default_value_t = 443)]
     #[serde(default = "default_https_port")]
     pub https_port: u16,
 
     /// Use Let's Encrypt staging environment for ACME issuance.
-    #[arg(long, env = "DEFGUARD_PROXY_ACME_STAGING", default_value_t = false)]
+    #[arg(long, env = "XGUARD_PROXY_ACME_STAGING", default_value_t = false)]
     #[serde(default)]
     pub acme_staging: bool,
 
@@ -133,7 +133,7 @@ pub struct EnvConfig {
     #[arg(
         long,
         short = 't',
-        env = "DEFGUARD_ADOPTION_TIMEOUT",
+        env = "XGUARD_ADOPTION_TIMEOUT",
         default_value = "10"
     )]
     #[serde(default = "default_adoption_timeout")]
@@ -221,9 +221,9 @@ mod tests {
             "config::tests::keepalive_environment_variables_child",
             "--nocapture",
         ])
-        .env("DEFGUARD_TEST_KEEPALIVE_ENV_CHILD", "1")
-        .env("DEFGUARD_PROXY_GRPC_KEEPALIVE_INTERVAL_SECONDS", "13")
-        .env("DEFGUARD_PROXY_GRPC_KEEPALIVE_TIMEOUT_SECONDS", "27")
+        .env("XGUARD_TEST_KEEPALIVE_ENV_CHILD", "1")
+        .env("XGUARD_PROXY_GRPC_KEEPALIVE_INTERVAL_SECONDS", "13")
+        .env("XGUARD_PROXY_GRPC_KEEPALIVE_TIMEOUT_SECONDS", "27")
         .output()
         .expect("environment test child should start");
         assert!(
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn keepalive_environment_variables_child() {
-        if std::env::var_os("DEFGUARD_TEST_KEEPALIVE_ENV_CHILD").is_none() {
+        if std::env::var_os("XGUARD_TEST_KEEPALIVE_ENV_CHILD").is_none() {
             return;
         }
 

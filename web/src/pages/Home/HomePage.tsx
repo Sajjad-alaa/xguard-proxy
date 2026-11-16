@@ -2,8 +2,8 @@ import './style.scss';
 
 import { m } from '../../paraglide/messages';
 import { Page } from '../../shared/components/Page/Page';
-import { SizedBox } from '../../shared/defguard-ui/components/SizedBox/SizedBox';
-import { ThemeSpacing } from '../../shared/defguard-ui/types';
+import { SizedBox } from '../../shared/xguard-ui/components/SizedBox/SizedBox';
+import { ThemeSpacing } from '../../shared/xguard-ui/types';
 import { HomeChoice } from './components/HomeChoice';
 
 const currentYear = new Date().getFullYear();
@@ -19,8 +19,8 @@ export const HomePage = () => {
       <footer>
         <p className="copyright">
           <span>Copyright ©2023-{currentYear.toString()} </span>
-          <a href="https://defguard.net" target="_blank" rel="noopener noreferrer">
-            Defguard
+          <a href="https://xguard.local" target="_blank" rel="noopener noreferrer">
+            XGuard
           </a>
           <span> Sp. z o.o.</span>
         </p>

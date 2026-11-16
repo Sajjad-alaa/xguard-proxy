@@ -11,16 +11,16 @@ import { ContainerWithIcon } from '../../../shared/components/ContainerWithIcon/
 import { Page } from '../../../shared/components/Page/Page';
 import { EnrollmentStep } from '../../../shared/components/Step/Step';
 import { externalLink } from '../../../shared/consts';
-import { Button } from '../../../shared/defguard-ui/components/Button/Button';
-import { CopyField } from '../../../shared/defguard-ui/components/CopyField/CopyField';
-import { Divider } from '../../../shared/defguard-ui/components/Divider/Divider';
-import { Fold } from '../../../shared/defguard-ui/components/Fold/Fold';
-import { Icon } from '../../../shared/defguard-ui/components/Icon';
-import { IconButton } from '../../../shared/defguard-ui/components/IconButton/IconButton';
-import { IconButtonMenu } from '../../../shared/defguard-ui/components/IconButtonMenu/IconButtonMenu';
-import type { MenuItemsGroup } from '../../../shared/defguard-ui/components/Menu/types';
-import { SizedBox } from '../../../shared/defguard-ui/components/SizedBox/SizedBox';
-import { ThemeSpacing } from '../../../shared/defguard-ui/types';
+import { Button } from '../../../shared/xguard-ui/components/Button/Button';
+import { CopyField } from '../../../shared/xguard-ui/components/CopyField/CopyField';
+import { Divider } from '../../../shared/xguard-ui/components/Divider/Divider';
+import { Fold } from '../../../shared/xguard-ui/components/Fold/Fold';
+import { Icon } from '../../../shared/xguard-ui/components/Icon';
+import { IconButton } from '../../../shared/xguard-ui/components/IconButton/IconButton';
+import { IconButtonMenu } from '../../../shared/xguard-ui/components/IconButtonMenu/IconButtonMenu';
+import type { MenuItemsGroup } from '../../../shared/xguard-ui/components/Menu/types';
+import { SizedBox } from '../../../shared/xguard-ui/components/SizedBox/SizedBox';
+import { ThemeSpacing } from '../../../shared/xguard-ui/types';
 import { getClientArtifactsQueryOptions } from '../../../shared/query/queryOptions';
 import { openClientLink } from '../../../shared/utils/openVirtualLink';
 
@@ -125,7 +125,7 @@ export const ConfigureClientPage = () => {
   const [manualOpen, setManualOpen] = useState(false);
 
   const deepLink = () =>
-    `defguard://addinstance?token=${pageData.token}&url=${pageData.enrollmentData.instance.proxy_url}`;
+    `xguard://addinstance?token=${pageData.token}&url=${pageData.enrollmentData.instance.proxy_url}`;
 
   const qrData = () => {
     return btoa(
@@ -165,7 +165,7 @@ export const ConfigureClientPage = () => {
           <div className="download">
             <p>{m.client_setup_download_label()}</p>
             <a
-              href={clientLinks?.windows_amd64 ?? externalLink.defguard.download}
+              href={clientLinks?.windows_amd64 ?? externalLink.xguard.download}
               target="_blank"
               rel="noopener noreferrer"
             >

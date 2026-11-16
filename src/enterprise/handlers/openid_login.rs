@@ -95,7 +95,7 @@ pub(crate) struct RequestData {
     flow_type: FlowType,
 }
 
-/// Request external OAuth2/OpenID provider details from Defguard Core.
+/// Request external OAuth2/OpenID provider details from XGuard Core.
 #[instrument(level = "debug", skip(state))]
 async fn auth_info(
     State(state): State<AppState>,

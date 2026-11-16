@@ -11,11 +11,11 @@ use std::{
 };
 
 use axum_extra::extract::cookie::Key;
-use defguard_certs::{CertificateError, CertificateInfo};
-use defguard_grpc_tls::{certs::server_tls_config, server::certificate_serial_interceptor};
-use defguard_version::{
-    ComponentInfo, DefguardComponent, Version, get_tracing_variables,
-    server::{DefguardVersionLayer, grpc::DefguardVersionInterceptor},
+use xguard_certs::{CertificateError, CertificateInfo};
+use xguard_grpc_tls::{certs::server_tls_config, server::certificate_serial_interceptor};
+use xguard_version::{
+    ComponentInfo, XGuardComponent, Version, get_tracing_variables,
+    server::{XGuardVersionLayer, grpc::XGuardVersionInterceptor},
 };
 use tokio::{
     fs::remove_file,
@@ -256,14 +256,14 @@ impl ProxyServer {
                 expected_serial,
             )))
             .layer(tonic::service::InterceptorLayer::new(
-                DefguardVersionInterceptor::new(
+                XGuardVersionInterceptor::new(
                     own_version.clone(),
-                    DefguardComponent::Core,
+                    XGuardComponent::Core,
                     MIN_CORE_VERSION,
                     false,
                 ),
             ))
-            .layer(DefguardVersionLayer::new(own_version))
+            .layer(XGuardVersionLayer::new(own_version))
             .service(proxy_server::ProxyServer::new(self.clone()));
 
         builder
@@ -316,10 +316,10 @@ impl ProxyServer {
             self.connected.store(true, Ordering::Relaxed);
             Ok(rx)
         } else {
-            error!("Defguard Core is not connected");
+            error!("XGuard Core is not connected");
             self.connected.store(false, Ordering::Relaxed);
             Err(ApiError::Unexpected(
-                "Defguard Core is not connected".into(),
+                "XGuard Core is not connected".into(),
             ))
         }
     }
@@ -384,7 +384,7 @@ impl proxy_server::Proxy for ProxyServer {
     type BidiStream = UnboundedReceiverStream<Result<CoreRequest, Status>>;
     type TriggerAcmeStream = UnboundedReceiverStream<Result<AcmeIssueEvent, Status>>;
 
-    /// Handle bidirectional communication with Defguard core.
+    /// Handle bidirectional communication with XGuard core.
     #[instrument(name = "bidirectional_communication", level = "info", skip(self))]
     async fn bidi(
         &self,
@@ -407,11 +407,11 @@ impl proxy_server::Proxy for ProxyServer {
             "Failed to acquire lock on core_version mutex when storing version information",
         ) = Some(version.clone());
 
-        let span = tracing::info_span!("core_bidi_stream", component = %DefguardComponent::Core,
+        let span = tracing::info_span!("core_bidi_stream", component = %XGuardComponent::Core,
             version = version.to_string(), info);
         let _guard = span.enter();
 
-        info!("Defguard Core gRPC client connected from: {address}");
+        info!("XGuard Core gRPC client connected from: {address}");
         let (tx, rx) = mpsc::unbounded_channel();
         self.clients
             .write()
@@ -434,7 +434,7 @@ impl proxy_server::Proxy for ProxyServer {
                 loop {
                     match stream.message().await {
                         Ok(Some(response)) => {
-                            debug!("Received message from Defguard Core ID={}", response.id);
+                            debug!("Received message from XGuard Core ID={}", response.id);
                             connected.store(true, Ordering::Relaxed);
                             if let Some(payload) = response.payload {
                                 match payload {
@@ -477,7 +477,7 @@ impl proxy_server::Proxy for ProxyServer {
                         }
                     }
                 }
-                info!("Defguard core client disconnected: {address}");
+                info!("XGuard core client disconnected: {address}");
                 remove_disconnected_client(&clients, &connected, address);
             }
             .instrument(tracing::Span::current()),

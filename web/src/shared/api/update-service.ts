@@ -3,10 +3,10 @@ import qs from 'qs';
 
 const baseUrl = import.meta.env.VITE_UPDATE_BASE_URL as string | undefined;
 
-const clientDownloadFallback = 'https://defguard.net/download';
+const clientDownloadFallback = 'https://xguard.local/download';
 
 const client = axios.create({
-  baseURL: baseUrl ?? 'https://pkgs.defguard.net/api',
+  baseURL: baseUrl ?? 'https://pkgs.xguard.local/api',
   headers: { 'Content-Type': 'application/json' },
   paramsSerializer: {
     serialize: (params) =>
@@ -33,7 +33,7 @@ const updateServiceApi = {
     client
       .get<ClientVersionCheck>('/update/artifacts', {
         params: {
-          product: 'defguard-client',
+          product: 'xguard-client',
           source: 'enrollment',
         },
       })

@@ -1,5 +1,5 @@
 import type { AxiosError } from 'axios';
-import type { ExternalProviderButtonProps } from '../defguard-ui/components/ExternalProviderButton/types';
+import type { ExternalProviderButtonProps } from '../xguard-ui/components/ExternalProviderButton/types';
 
 export type EmptyApiResponse = Record<never, never>;
 

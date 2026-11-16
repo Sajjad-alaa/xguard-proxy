@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use defguard_certs::{
+use xguard_certs::{
     CertificateAuthority, Csr, PemLabel, cert_der_to_pem, der_to_pem, generate_key_pair,
 };
 use futures_util::stream;
@@ -414,7 +414,7 @@ async fn test_shutdown_drains_active_enrollment_request_and_bidi_stream() {
         core_rx,
     ));
     let mut interceptor =
-        defguard_version::client::ClientVersionInterceptor::new(crate::MIN_CORE_VERSION.clone());
+        xguard_version::client::ClientVersionInterceptor::new(crate::MIN_CORE_VERSION.clone());
     let version_headers = interceptor
         .call(Request::new(()))
         .expect("Core version headers should be valid");
@@ -528,7 +528,7 @@ async fn test_silent_bidi_connection_drop_is_detected_by_keepalive() {
     .expect("TLS handshake should succeed with valid client cert");
 
     let mut interceptor =
-        defguard_version::client::ClientVersionInterceptor::new(crate::MIN_CORE_VERSION.clone());
+        xguard_version::client::ClientVersionInterceptor::new(crate::MIN_CORE_VERSION.clone());
     let version_headers = interceptor
         .call(Request::new(()))
         .expect("Core version headers should be valid");

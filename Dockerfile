@@ -46,5 +46,5 @@ RUN echo "cachebust=${CACHEBUST}" && apt-get update -y && apt-get upgrade -y && 
     apt-get install --no-install-recommends -y ca-certificates libssl-dev libudev1 lsb-release && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --from=builder /build/bin/defguard-proxy .
-ENTRYPOINT ["./defguard-proxy"]
+COPY --from=builder /build/bin/xguard-proxy .
+ENTRYPOINT ["./xguard-proxy"]

@@ -2,7 +2,7 @@ import { createFileRoute, redirect, useLoaderData } from '@tanstack/react-router
 import { useEffect } from 'react';
 import z from 'zod';
 import { api } from '../../../shared/api/api';
-import { isPresent } from '../../../shared/defguard-ui/utils/isPresent';
+import { isPresent } from '../../../shared/xguard-ui/utils/isPresent';
 
 const searchSchema = z.object({
   token: z.string().trim().min(1),

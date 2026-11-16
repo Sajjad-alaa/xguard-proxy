@@ -17,7 +17,7 @@ on:
         value: ${{ jobs.docker-manifest.outputs.digest }}
 
 env:
-  GHCR_REPO: ghcr.io/defguard/defguard-proxy
+  GHCR_REPO: ghcr.io/sajjad-alaa/xguard-proxy
 
 jobs:
   build-docker:
@@ -147,4 +147,4 @@ jobs:
       - name: Verify image signatures
         run: |
           images='${{ env.GHCR_REPO }}:${{ github.sha }} ${{ steps.meta.outputs.tags }}'
-          cosign verify ${images} --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp="https://github.com/DefGuard/proxy" -o text
+          cosign verify ${images} --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp="https://github.com/Sajjad-alaa/xguard-proxy" -o text

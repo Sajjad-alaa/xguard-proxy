@@ -28,7 +28,7 @@ env:
 jobs:
   test:
     runs-on:
-      - codebuild-defguard-proxy-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-xguard-proxy-runner-${{ github.run_id }}-${{ github.run_attempt }}
     container: public.ecr.aws/docker/library/rust:1
 
     steps:

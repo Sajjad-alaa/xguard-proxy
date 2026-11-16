@@ -133,7 +133,7 @@ jobs:
             done < <(git config -f .gitmodules --get-regexp '\.path$')
 
             # Core dependency commits in Cargo.lock are merged
-            CORE_REPO=$GITHUB_REPOSITORY_OWNER/defguard
+            CORE_REPO=$GITHUB_REPOSITORY_OWNER/xguard
             default=$(gh api "repos/$CORE_REPO" --jq .default_branch)
             CORE_SHAS=$(sed -nE "s|^source = \"git\+https://github\.com/$CORE_REPO(\.git)?(\?[^#\"]*)?#([0-9a-f]{40})\"$|\3|p" Cargo.lock | sort -u)
             if [[ -z $CORE_SHAS ]] && grep -q "github.com/$CORE_REPO" Cargo.toml; then
@@ -270,13 +270,13 @@ jobs:
           echo $! > "$RUNNER_TEMP/freebsd.pid"
 
       - name: Build source code archive
-        run: tar --exclude='.github' --exclude-vcs --exclude-vcs-ignores --xform='s|^\./|proxy-${{ env.VERSION }}/|' --xz -cf ${{ runner.temp }}/defguard-proxy-${{ env.VERSION }}.tar.xz .
+        run: tar --exclude='.github' --exclude-vcs --exclude-vcs-ignores --xform='s|^\./|proxy-${{ env.VERSION }}/|' --xz -cf ${{ runner.temp }}/xguard-proxy-${{ env.VERSION }}.tar.xz .
 
       - name: Upload source code archive
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: source
-          path: ${{ runner.temp }}/defguard-proxy-${{ env.VERSION }}.tar.xz
+          path: ${{ runner.temp }}/xguard-proxy-${{ env.VERSION }}.tar.xz
           if-no-files-found: error
           overwrite: true
           retention-days: 7
@@ -306,8 +306,8 @@ jobs:
         run: |
           cargo build --locked --release --target x86_64-unknown-linux-gnu --target aarch64-unknown-linux-gnu
           for target in x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu; do
-            mv "target/$target/release/defguard-proxy" "defguard-proxy-${{ env.VERSION }}-$target"
-            tar -zcf "defguard-proxy-${{ env.VERSION }}-$target.tar.gz" "defguard-proxy-${{ env.VERSION }}-$target"
+            mv "target/$target/release/xguard-proxy" "xguard-proxy-${{ env.VERSION }}-$target"
+            tar -zcf "xguard-proxy-${{ env.VERSION }}-$target.tar.gz" "xguard-proxy-${{ env.VERSION }}-$target"
           done
 
       - name: Wait for FreeBSD build
@@ -321,85 +321,85 @@ jobs:
             echo "::error::The FreeBSD build failed. Its output is above."
             exit 1
           fi
-          scp root@freebsd:work/edge/target/release/defguard-proxy defguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd
-          tar -zcf defguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd.tar.gz \
-            defguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd
+          scp root@freebsd:work/edge/target/release/xguard-proxy xguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd
+          tar -zcf xguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd.tar.gz \
+            xguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd
 
       - name: Build x86_64 DEB package
-        uses: defGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
+        uses: xGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
         with:
           fpm_args:
-            "defguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu=/usr/bin/defguard-proxy
-            linux/defguard-proxy.service=/usr/lib/systemd/system/defguard-proxy.service
-            example-config.toml=/etc/defguard/proxy.toml"
+            "xguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu=/usr/bin/xguard-proxy
+            linux/xguard-proxy.service=/usr/lib/systemd/system/xguard-proxy.service
+            example-config.toml=/etc/xguard/proxy.toml"
           fpm_opts: "--architecture amd64
             --output-type deb
             --version ${{ env.VERSION }}
-            --package defguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu.deb
+            --package xguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu.deb
             --before-install linux/preinst
             --after-install linux/postinst
             --before-remove linux/prerm
             --after-remove linux/postrm"
 
       - name: Build aarch64 DEB package
-        uses: defGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
+        uses: xGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
         with:
           fpm_args:
-            "defguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu=/usr/bin/defguard-proxy
-            linux/defguard-proxy.service=/usr/lib/systemd/system/defguard-proxy.service
-            example-config.toml=/etc/defguard/proxy.toml"
+            "xguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu=/usr/bin/xguard-proxy
+            linux/xguard-proxy.service=/usr/lib/systemd/system/xguard-proxy.service
+            example-config.toml=/etc/xguard/proxy.toml"
           fpm_opts: "--architecture arm64
             --output-type deb
             --version ${{ env.VERSION }}
-            --package defguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu.deb
+            --package xguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu.deb
             --before-install linux/preinst
             --after-install linux/postinst
             --before-remove linux/prerm
             --after-remove linux/postrm"
 
       - name: Build x86_64 RPM package
-        uses: defGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
+        uses: xGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
         with:
           fpm_args:
-            "defguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu=/usr/bin/defguard-proxy
-            linux/defguard-proxy.service=/usr/lib/systemd/system/defguard-proxy.service
-            example-config.toml=/etc/defguard/proxy.toml"
+            "xguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu=/usr/bin/xguard-proxy
+            linux/xguard-proxy.service=/usr/lib/systemd/system/xguard-proxy.service
+            example-config.toml=/etc/xguard/proxy.toml"
           fpm_opts: "--architecture amd64
             --output-type rpm
             --version ${{ env.VERSION }}
-            --package defguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu.rpm
+            --package xguard-proxy-${{ env.VERSION }}-x86_64-unknown-linux-gnu.rpm
             --before-install linux/preinst
             --after-install linux/postinst
             --before-remove linux/prerm
             --after-remove linux/postrm"
 
       - name: Build aarch64 RPM package
-        uses: defGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
+        uses: xGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
         with:
           fpm_args:
-            "defguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu=/usr/bin/defguard-proxy
-            linux/defguard-proxy.service=/usr/lib/systemd/system/defguard-proxy.service
-            example-config.toml=/etc/defguard/proxy.toml"
+            "xguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu=/usr/bin/xguard-proxy
+            linux/xguard-proxy.service=/usr/lib/systemd/system/xguard-proxy.service
+            example-config.toml=/etc/xguard/proxy.toml"
           fpm_opts: "--architecture arm64
             --output-type rpm
             --version ${{ env.VERSION }}
-            --package defguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu.rpm
+            --package xguard-proxy-${{ env.VERSION }}-aarch64-unknown-linux-gnu.rpm
             --before-install linux/preinst
             --after-install linux/postinst
             --before-remove linux/prerm
             --after-remove linux/postrm"
 
       - name: Build FreeBSD package
-        uses: defGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
+        uses: xGuard/fpm-action@ebb2575fbb892876fbdd326bb6d12524fbd7398c # main
         with:
           fpm_args:
-            "defguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd=/usr/local/bin/defguard-proxy
-            freebsd/defguard-proxy=/usr/local/etc/rc.d/defguard-proxy
-            example-config.toml=/etc/defguard/proxy.toml.sample"
+            "xguard-proxy-${{ env.VERSION }}-x86_64-unknown-freebsd=/usr/local/bin/xguard-proxy
+            freebsd/xguard-proxy=/usr/local/etc/rc.d/xguard-proxy
+            example-config.toml=/etc/xguard/proxy.toml.sample"
           fpm_opts: "--architecture amd64
             --output-type freebsd
             --version ${{ env.VERSION }}
-            --package defguard-proxy-${{ env.VERSION }}_x86_64-unknown-freebsd.pkg
+            --package xguard-proxy-${{ env.VERSION }}_x86_64-unknown-freebsd.pkg
             --freebsd-osversion '*'
             --depends openssl
             --after-install freebsd/post-install.sh"
@@ -409,10 +409,10 @@ jobs:
         with:
           name: binaries
           path: |
-            defguard-proxy-${{ env.VERSION }}-*.tar.gz
-            defguard-proxy-${{ env.VERSION }}-*.deb
-            defguard-proxy-${{ env.VERSION }}-*.rpm
-            defguard-proxy-${{ env.VERSION }}_x86_64-unknown-freebsd.pkg
+            xguard-proxy-${{ env.VERSION }}-*.tar.gz
+            xguard-proxy-${{ env.VERSION }}-*.deb
+            xguard-proxy-${{ env.VERSION }}-*.rpm
+            xguard-proxy-${{ env.VERSION }}_x86_64-unknown-freebsd.pkg
           if-no-files-found: error
           overwrite: true
           retention-days: 7
@@ -503,20 +503,20 @@ jobs:
             --output-type deb \
             --version "${{ env.VERSION }}" \
             --architecture ${{ matrix.deb_arch }} \
-            --package defguard-proxy-${{ env.VERSION }}-${{ matrix.deb_arch }}_ubuntu-22-04-lts.deb \
+            --package xguard-proxy-${{ env.VERSION }}-${{ matrix.deb_arch }}_ubuntu-22-04-lts.deb \
             --before-install linux/preinst \
             --after-install linux/postinst \
             --before-remove linux/prerm \
             --after-remove linux/postrm \
-            "target/${{ matrix.rust_target }}/release/defguard-proxy=/usr/bin/defguard-proxy" \
-            "linux/defguard-proxy.service=/usr/lib/systemd/system/defguard-proxy.service" \
-            "example-config.toml=/etc/defguard/proxy.toml"
+            "target/${{ matrix.rust_target }}/release/xguard-proxy=/usr/bin/xguard-proxy" \
+            "linux/xguard-proxy.service=/usr/lib/systemd/system/xguard-proxy.service" \
+            "example-config.toml=/etc/xguard/proxy.toml"
 
       - name: Upload ubuntu-22-04-lts DEB
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ubuntu-22-04-${{ matrix.deb_arch }}
-          path: defguard-proxy-${{ env.VERSION }}-${{ matrix.deb_arch }}_ubuntu-22-04-lts.deb
+          path: xguard-proxy-${{ env.VERSION }}-${{ matrix.deb_arch }}_ubuntu-22-04-lts.deb
           if-no-files-found: error
           overwrite: true
           retention-days: 7
@@ -536,7 +536,7 @@ jobs:
       issues: write
     env:
       VERSION: ${{ needs.precheck.outputs.version }}
-      GHCR_REPO: ghcr.io/defguard/defguard-proxy
+      GHCR_REPO: ghcr.io/sajjad-alaa/xguard-proxy
       GH_REPO: ${{ github.repository }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -558,28 +558,28 @@ jobs:
             exit 1
           fi
           # Later runs of the same commit move its sha tag, so the draft names this build by digest.
-          echo "$GHCR_REPO@$DIGEST" > "dist/defguard-proxy-$VERSION-docker-image.txt"
+          echo "$GHCR_REPO@$DIGEST" > "dist/xguard-proxy-$VERSION-docker-image.txt"
 
       - name: Compare build output with the expected release assets
         run: |
           set -euo pipefail
           expected=(
-            "defguard-proxy-$VERSION.tar.xz"
-            "defguard-proxy-$VERSION-x86_64-unknown-linux-gnu.tar.gz"
-            "defguard-proxy-$VERSION-aarch64-unknown-linux-gnu.tar.gz"
-            "defguard-proxy-$VERSION-x86_64-unknown-freebsd.tar.gz"
-            "defguard-proxy-$VERSION-x86_64-unknown-linux-gnu.deb"
-            "defguard-proxy-$VERSION-aarch64-unknown-linux-gnu.deb"
-            "defguard-proxy-$VERSION-x86_64-unknown-linux-gnu.rpm"
-            "defguard-proxy-$VERSION-aarch64-unknown-linux-gnu.rpm"
-            "defguard-proxy-${VERSION}_x86_64-unknown-freebsd.pkg"
-            "defguard-proxy-$VERSION-amd64_ubuntu-22-04-lts.deb"
-            "defguard-proxy-$VERSION-arm64_ubuntu-22-04-lts.deb"
-            "defguard-proxy-$VERSION.sbom.json"
-            "defguard-proxy-$VERSION-docker.sbom.json"
-            "defguard-proxy-$VERSION.advisories.json"
-            "defguard-proxy-$VERSION-docker.advisories.json"
-            "defguard-proxy-$VERSION-docker-image.txt"
+            "xguard-proxy-$VERSION.tar.xz"
+            "xguard-proxy-$VERSION-x86_64-unknown-linux-gnu.tar.gz"
+            "xguard-proxy-$VERSION-aarch64-unknown-linux-gnu.tar.gz"
+            "xguard-proxy-$VERSION-x86_64-unknown-freebsd.tar.gz"
+            "xguard-proxy-$VERSION-x86_64-unknown-linux-gnu.deb"
+            "xguard-proxy-$VERSION-aarch64-unknown-linux-gnu.deb"
+            "xguard-proxy-$VERSION-x86_64-unknown-linux-gnu.rpm"
+            "xguard-proxy-$VERSION-aarch64-unknown-linux-gnu.rpm"
+            "xguard-proxy-${VERSION}_x86_64-unknown-freebsd.pkg"
+            "xguard-proxy-$VERSION-amd64_ubuntu-22-04-lts.deb"
+            "xguard-proxy-$VERSION-arm64_ubuntu-22-04-lts.deb"
+            "xguard-proxy-$VERSION.sbom.json"
+            "xguard-proxy-$VERSION-docker.sbom.json"
+            "xguard-proxy-$VERSION.advisories.json"
+            "xguard-proxy-$VERSION-docker.advisories.json"
+            "xguard-proxy-$VERSION-docker-image.txt"
           )
           if ! diff <(printf '%s\n' "${expected[@]}" | sort) <(ls dist | sort); then
             echo "::error::The build output does not match the expected release assets"

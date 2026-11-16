@@ -64,10 +64,10 @@ where
     }
 }
 
-// Timeout for awaiting response from Defguard Core.
+// Timeout for awaiting response from XGuard Core.
 const CORE_RESPONSE_TIMEOUT: Duration = Duration::from_secs(5);
-const CLIENT_VERSION_HEADER: &str = "defguard-client-version";
-const CLIENT_PLATFORM_HEADER: &str = "defguard-client-platform";
+const CLIENT_VERSION_HEADER: &str = "xguard-client-version";
+const CLIENT_PLATFORM_HEADER: &str = "xguard-client-platform";
 
 /// Reads the enrollment token from the private cookie set at enrollment start.
 pub(super) fn enrollment_token(cookie_jar: &PrivateCookieJar) -> Result<String, ApiError> {
@@ -124,7 +124,7 @@ pub(crate) async fn get_core_response(
 ) -> Result<Payload, ApiError> {
     debug!("Fetching core response.");
     if let Ok(core_response) = time::timeout(timeout.unwrap_or(CORE_RESPONSE_TIMEOUT), rx).await {
-        debug!("Got gRPC response from Defguard Core");
+        debug!("Got gRPC response from XGuard Core");
         if let Ok(Payload::CoreError(core_error)) = core_response {
             if core_error.status_code == Code::FailedPrecondition as i32
                 && core_error.message == "no valid license"

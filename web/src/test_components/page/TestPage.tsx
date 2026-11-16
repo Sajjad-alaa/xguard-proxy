@@ -1,21 +1,21 @@
 import { type PropsWithChildren, useMemo, useState } from 'react';
 import { Page } from '../../shared/components/Page/Page';
 import './style.scss';
-import { Avatar } from '../../shared/defguard-ui/components/Avatar/Avatar';
-import { Badge } from '../../shared/defguard-ui/components/Badge/Badge';
-import { Button } from '../../shared/defguard-ui/components/Button/Button';
-import { ButtonMenu } from '../../shared/defguard-ui/components/ButtonMenu/MenuButton';
-import { Checkbox } from '../../shared/defguard-ui/components/Checkbox/Checkbox';
-import { CounterLabel } from '../../shared/defguard-ui/components/CounterLabel/CounterLabel';
-import { Divider } from '../../shared/defguard-ui/components/Divider/Divider';
-import { EmptyState } from '../../shared/defguard-ui/components/EmptyState/EmptyState';
-import { IconButton } from '../../shared/defguard-ui/components/IconButton/IconButton';
-import { Input } from '../../shared/defguard-ui/components/Input/Input';
-import type { MenuItemsGroup } from '../../shared/defguard-ui/components/Menu/types';
-import { Modal } from '../../shared/defguard-ui/components/Modal/Modal';
-import { ModalControls } from '../../shared/defguard-ui/components/ModalControls/ModalControls';
-import { Radio } from '../../shared/defguard-ui/components/Radio/Radio';
-import { SizedBox } from '../../shared/defguard-ui/components/SizedBox/SizedBox';
+import { Avatar } from '../../shared/xguard-ui/components/Avatar/Avatar';
+import { Badge } from '../../shared/xguard-ui/components/Badge/Badge';
+import { Button } from '../../shared/xguard-ui/components/Button/Button';
+import { ButtonMenu } from '../../shared/xguard-ui/components/ButtonMenu/MenuButton';
+import { Checkbox } from '../../shared/xguard-ui/components/Checkbox/Checkbox';
+import { CounterLabel } from '../../shared/xguard-ui/components/CounterLabel/CounterLabel';
+import { Divider } from '../../shared/xguard-ui/components/Divider/Divider';
+import { EmptyState } from '../../shared/xguard-ui/components/EmptyState/EmptyState';
+import { IconButton } from '../../shared/xguard-ui/components/IconButton/IconButton';
+import { Input } from '../../shared/xguard-ui/components/Input/Input';
+import type { MenuItemsGroup } from '../../shared/xguard-ui/components/Menu/types';
+import { Modal } from '../../shared/xguard-ui/components/Modal/Modal';
+import { ModalControls } from '../../shared/xguard-ui/components/ModalControls/ModalControls';
+import { Radio } from '../../shared/xguard-ui/components/Radio/Radio';
+import { SizedBox } from '../../shared/xguard-ui/components/SizedBox/SizedBox';
 
 export const TestPage = () => {
   return (

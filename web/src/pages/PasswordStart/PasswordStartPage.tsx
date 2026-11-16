@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { m } from '../../paraglide/messages';
 import { Container } from '../../shared/components/Container/Container';
 import { Page } from '../../shared/components/Page/Page';
-import { SizedBox } from '../../shared/defguard-ui/components/SizedBox/SizedBox';
-import { ThemeSpacing } from '../../shared/defguard-ui/types';
+import { SizedBox } from '../../shared/xguard-ui/components/SizedBox/SizedBox';
+import { ThemeSpacing } from '../../shared/xguard-ui/types';
 
 import './style.scss';
 import { useMutation } from '@tanstack/react-query';

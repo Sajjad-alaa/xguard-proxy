@@ -58,7 +58,7 @@ jobs:
         with:
           scan-type: 'fs'
           format: 'spdx-json'
-          output: "defguard-proxy-${{ steps.vars.outputs.VERSION }}.sbom.json"
+          output: "xguard-proxy-${{ steps.vars.outputs.VERSION }}.sbom.json"
           scan-ref: '.'
           severity: "CRITICAL,HIGH,MEDIUM,LOW"
           scanners: "vuln"
@@ -69,10 +69,10 @@ jobs:
           TRIVY_SHOW_SUPPRESSED: 1
           TRIVY_IGNOREFILE: "./.trivyignore.yaml"
         with:
-          image-ref: "ghcr.io/defguard/defguard-proxy:${{ steps.vars.outputs.IMAGE_TAG }}"
+          image-ref: "ghcr.io/sajjad-alaa/xguard-proxy:${{ steps.vars.outputs.IMAGE_TAG }}"
           scan-type: 'image'
           format: 'spdx-json'
-          output: "defguard-proxy-${{ steps.vars.outputs.VERSION }}-docker.sbom.json"
+          output: "xguard-proxy-${{ steps.vars.outputs.VERSION }}-docker.sbom.json"
           severity: "CRITICAL,HIGH,MEDIUM,LOW"
           scanners: "vuln"
 
@@ -84,7 +84,7 @@ jobs:
         with:
           scan-type: 'fs'
           format: 'json'
-          output: "defguard-proxy-${{ steps.vars.outputs.VERSION }}.advisories.json"
+          output: "xguard-proxy-${{ steps.vars.outputs.VERSION }}.advisories.json"
           scan-ref: '.'
           severity: "CRITICAL,HIGH,MEDIUM,LOW"
           scanners: "vuln"
@@ -95,10 +95,10 @@ jobs:
           TRIVY_SHOW_SUPPRESSED: 1
           TRIVY_IGNOREFILE: "./.trivyignore.yaml"
         with:
-          image-ref: "ghcr.io/defguard/defguard-proxy:${{ steps.vars.outputs.IMAGE_TAG }}"
+          image-ref: "ghcr.io/sajjad-alaa/xguard-proxy:${{ steps.vars.outputs.IMAGE_TAG }}"
           scan-type: 'image'
           format: 'json'
-          output: "defguard-proxy-${{ steps.vars.outputs.VERSION }}-docker.advisories.json"
+          output: "xguard-proxy-${{ steps.vars.outputs.VERSION }}-docker.advisories.json"
           severity: "CRITICAL,HIGH,MEDIUM,LOW"
           scanners: "vuln"
 
@@ -109,7 +109,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ inputs.upload_url }}
-          asset_path: "defguard-*.json"
+          asset_path: "xguard-*.json"
           asset_content_type: application/json
           overwrite: true
 
@@ -118,7 +118,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sbom
-          path: defguard-*.json
+          path: xguard-*.json
           if-no-files-found: error
           overwrite: true
           retention-days: 7

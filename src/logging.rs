@@ -1,7 +1,7 @@
 use std::fmt::Write as _;
 
-use defguard_version::{
-    ComponentInfo, DefguardVersionError, Version,
+use xguard_version::{
+    ComponentInfo, XGuardVersionError, Version,
     tracing::{
         VersionFieldLayer, VersionFilteredFields, VersionSuffixWriter, build_version_suffix,
         extract_version_info_from_context,
@@ -26,16 +26,16 @@ use crate::proto::LogEntry;
 
 // Initializes tracing with the specified log level and version information.
 // Allows fine-grained filtering with `EnvFilter` directives.
-// The directives are read from `DEFGUARD_PROXY_LOG_FILTER` env variable.
+// The directives are read from `XGUARD_PROXY_LOG_FILTER` env variable.
 // For more info read: <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html>
 pub fn init_tracing(
     own_version: Version,
     level: &LevelFilter,
     logs_tx: Option<Sender<LogEntry>>,
-) -> Result<(), DefguardVersionError> {
+) -> Result<(), XGuardVersionError> {
     let subscriber = tracing_subscriber::registry()
         .with(
-            EnvFilter::try_from_env("DEFGUARD_PROXY_LOG_FILTER").unwrap_or_else(|_| {
+            EnvFilter::try_from_env("XGUARD_PROXY_LOG_FILTER").unwrap_or_else(|_| {
                 format!("{level},h2=warn,h2::codec=off,tower=warn,hyper=warn").into()
             }),
         )

@@ -1,4 +1,4 @@
-import './shared/defguard-ui/scss/index.scss';
+import './shared/xguard-ui/scss/index.scss';
 
 // import { TanStackDevtools } from '@tanstack/react-devtools';
 // import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools';

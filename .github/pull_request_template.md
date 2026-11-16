@@ -7,7 +7,7 @@
 
 #### Documentation ###
 
-- [ ] If testing requires changes in the environment or deployment, please **update the documentation** (https://defguard.gitbook.io) first and **attach the link to the documentation** section in this pool request
+- [ ] If testing requires changes in the environment or deployment, please **update the documentation** (https://docs.xguard.local) first and **attach the link to the documentation** section in this pool request
 - [ ] I have commented on my code, particularly in hard-to-understand areas
 
 #### Testing ### 
@@ -18,7 +18,7 @@
 
 #### Deployment ###
 
-- [ ] If deployment is affected I have made corresponding/required changes to [deployment](https://github.com/defguard/deployment) (Docker, Kubernetes, one-line install)
+- [ ] If deployment is affected I have made corresponding/required changes to [deployment](https://github.com/Sajjad-alaa/xguard-deployment) (Docker, Kubernetes, one-line install)
 
 ### 🏚️ Main Branch Merge Checklist:
 

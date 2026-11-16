@@ -1,9 +1,9 @@
 import './style.scss';
 import { m } from '../../../paraglide/messages';
-import { Modal } from '../../defguard-ui/components/Modal/Modal';
-import { ModalControls } from '../../defguard-ui/components/ModalControls/ModalControls';
-import { SizedBox } from '../../defguard-ui/components/SizedBox/SizedBox';
-import { ThemeSpacing } from '../../defguard-ui/types';
+import { Modal } from '../../xguard-ui/components/Modal/Modal';
+import { ModalControls } from '../../xguard-ui/components/ModalControls/ModalControls';
+import { SizedBox } from '../../xguard-ui/components/SizedBox/SizedBox';
+import { ThemeSpacing } from '../../xguard-ui/types';
 import apple_video_src from './assets/apple_hardware_help.mp4';
 
 type Props = {

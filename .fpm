@@ -1,6 +1,6 @@
 -s dir
---name defguard-proxy
---description "Defguard Edge service"
---url "https://defguard.net/"
---maintainer "Defguard"
---config-files /etc/defguard/proxy.toml
+--name xguard-proxy
+--description "XGuard Edge service"
+--url "https://xguard.local/"
+--maintainer "XGuard"
+--config-files /etc/xguard/proxy.toml

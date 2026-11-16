@@ -1,13 +1,13 @@
 import './style.scss';
 
 import { Link } from '@tanstack/react-router';
-import { AppText } from '../../defguard-ui/components/AppText/AppText';
-import { Button } from '../../defguard-ui/components/Button/Button';
-import { Icon } from '../../defguard-ui/components/Icon';
-import type { IconKindValue } from '../../defguard-ui/components/Icon/icon-types';
-import { SizedBox } from '../../defguard-ui/components/SizedBox/SizedBox';
-import { TextStyle, ThemeSpacing } from '../../defguard-ui/types';
-import { isPresent } from '../../defguard-ui/utils/isPresent';
+import { AppText } from '../../xguard-ui/components/AppText/AppText';
+import { Button } from '../../xguard-ui/components/Button/Button';
+import { Icon } from '../../xguard-ui/components/Icon';
+import type { IconKindValue } from '../../xguard-ui/components/Icon/icon-types';
+import { SizedBox } from '../../xguard-ui/components/SizedBox/SizedBox';
+import { TextStyle, ThemeSpacing } from '../../xguard-ui/types';
+import { isPresent } from '../../xguard-ui/utils/isPresent';
 import { Page } from '../Page/Page';
 
 type Props = {

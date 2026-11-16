@@ -1,7 +1,7 @@
 import './style.scss';
 import clsx from 'clsx';
 import type { HTMLProps, PropsWithChildren } from 'react';
-import { BorderRadius, type BorderRadiusValue } from '../../defguard-ui/types';
+import { BorderRadius, type BorderRadiusValue } from '../../xguard-ui/types';
 
 type Props = {
   borderRadius?: BorderRadiusValue;

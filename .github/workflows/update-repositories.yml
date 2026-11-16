@@ -50,7 +50,7 @@ jobs:
 
             echo "Uploading $deb_file to $codename"
             deb-s3 upload -p -l \
-              --bucket=apt.defguard.net \
+              --bucket=apt.xguard.local \
               --access-key-id=${{ secrets.AWS_ACCESS_KEY_APT }} \
               --secret-access-key=${{ secrets.AWS_SECRET_KEY_APT }} \
               --s3-region=eu-north-1 \
@@ -77,19 +77,19 @@ jobs:
           sudo apt-get install -y awscli curl jq
 
           for DIST in trixie bookworm; do
-            aws s3 cp s3://apt.defguard.net/dists/${DIST}/Release .
+            aws s3 cp s3://apt.xguard.local/dists/${DIST}/Release .
 
-            curl -X POST "${{ secrets.DEFGUARD_SIGNING_URL }}?signature_type=both" \
-              -H "Authorization: Bearer ${{ secrets.DEFGUARD_SIGNING_API_KEY }}" \
+            curl -X POST "${{ secrets.XGUARD_SIGNING_URL }}?signature_type=both" \
+              -H "Authorization: Bearer ${{ secrets.XGUARD_SIGNING_API_KEY }}" \
               -F "file=@Release" \
               -o response.json
 
             cat response.json | jq -r '.files["Release.gpg"].content' | base64 --decode > Release.gpg
             cat response.json | jq -r '.files.Release.content' | base64 --decode > InRelease
 
-            aws s3 cp Release.gpg s3://apt.defguard.net/dists/${DIST}/ --acl public-read
-            aws s3 cp InRelease s3://apt.defguard.net/dists/${DIST}/ --acl public-read
+            aws s3 cp Release.gpg s3://apt.xguard.local/dists/${DIST}/ --acl public-read
+            aws s3 cp InRelease s3://apt.xguard.local/dists/${DIST}/ --acl public-read
 
           done
-          (aws s3 ls s3://apt.defguard.net/dists/ --recursive; aws s3 ls s3://apt.defguard.net/pool/ --recursive) | awk '{print "<a href=\""$4"\">"$4"</a><br>"}' > index.html
-          aws s3 cp index.html s3://apt.defguard.net/ --acl public-read
+          (aws s3 ls s3://apt.xguard.local/dists/ --recursive; aws s3 ls s3://apt.xguard.local/pool/ --recursive) | awk '{print "<a href=\""$4"\">"$4"</a><br>"}' > index.html
+          aws s3 cp index.html s3://apt.xguard.local/ --acl public-read

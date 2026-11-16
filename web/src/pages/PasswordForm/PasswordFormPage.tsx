@@ -9,11 +9,11 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { useCallback } from 'react';
 import { api } from '../../shared/api/api';
-import { Button } from '../../shared/defguard-ui/components/Button/Button';
-import { Icon } from '../../shared/defguard-ui/components/Icon';
-import type { IconKindValue } from '../../shared/defguard-ui/components/Icon/icon-types';
-import { SizedBox } from '../../shared/defguard-ui/components/SizedBox/SizedBox';
-import { ThemeSpacing } from '../../shared/defguard-ui/types';
+import { Button } from '../../shared/xguard-ui/components/Button/Button';
+import { Icon } from '../../shared/xguard-ui/components/Icon';
+import type { IconKindValue } from '../../shared/xguard-ui/components/Icon/icon-types';
+import { SizedBox } from '../../shared/xguard-ui/components/SizedBox/SizedBox';
+import { ThemeSpacing } from '../../shared/xguard-ui/types';
 import { useAppForm, withForm } from '../../shared/form';
 
 const PasswordErrorCode = {

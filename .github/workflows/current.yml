@@ -37,7 +37,7 @@ jobs:
       - name: Update stable instance
         run: |
           version=${GITHUB_REF_NAME#stable/}
-          name=defguard-stable-${version//./}
+          name=xguard-stable-${version//./}
           id=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=$name" Name=instance-state-name,Values=running \
             --query 'Reservations[0].Instances[0].InstanceId' --output text)
@@ -46,6 +46,6 @@ jobs:
             exit 0
           fi
           cmd=$(aws ssm send-command --instance-ids "$id" --document-name AWS-RunShellScript \
-            --parameters 'commands=["cd /home/admin/defguard && docker compose pull -q && docker compose up -d"]' \
+            --parameters 'commands=["cd /home/admin/xguard && docker compose pull -q && docker compose up -d"]' \
             --query Command.CommandId --output text)
           aws ssm wait command-executed --command-id "$cmd" --instance-id "$id"

@@ -9,7 +9,7 @@ export const OpenDesktopPage = () => {
     from: '/open-desktop',
   });
 
-  const deepLinkUrl = new URL('defguard://addinstance');
+  const deepLinkUrl = new URL('xguard://addinstance');
   deepLinkUrl.searchParams.set('token', token);
   if (typeof window !== 'undefined') {
     deepLinkUrl.searchParams.set('url', window.location.origin);

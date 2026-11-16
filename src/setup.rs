@@ -8,9 +8,9 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use defguard_version::{
-    DefguardComponent, Version,
-    server::{DefguardVersionLayer, grpc::DefguardVersionInterceptor},
+use xguard_version::{
+    XGuardComponent, Version,
+    server::{XGuardVersionLayer, grpc::XGuardVersionInterceptor},
 };
 use rustls_pki_types::{CertificateDer, UnixTime};
 use tokio::{
@@ -110,9 +110,9 @@ async fn save_tls_certs(tls_config: &TlsConfig, cert_dir: &Path) -> Result<(), S
     options.mode(0o600); // rw-------
 
     // PEM-encode the Core client certificate DER for serial pinning on restart.
-    let core_client_cert_pem = defguard_certs::der_to_pem(
+    let core_client_cert_pem = xguard_certs::der_to_pem(
         &tls_config.core_client_cert_der,
-        defguard_certs::PemLabel::Certificate,
+        xguard_certs::PemLabel::Certificate,
     )
     .map_err(|err| format!("Failed to PEM-encode Core client certificate: {err}"))?;
 
@@ -189,7 +189,7 @@ async fn save_tls_certs(tls_config: &TlsConfig, cert_dir: &Path) -> Result<(), S
 }
 
 pub(crate) struct ProxySetupServer {
-    key_pair: Arc<Mutex<Option<defguard_certs::RcGenKeyPair>>>,
+    key_pair: Arc<Mutex<Option<xguard_certs::RcGenKeyPair>>>,
     logs_rx: LogsReceiver,
     current_session_token: Arc<Mutex<Option<String>>>,
     setup_tx: Arc<tokio::sync::Mutex<Option<oneshot::Sender<TlsConfig>>>>,
@@ -226,7 +226,7 @@ impl ProxySetupServer {
         }
     }
 
-    /// Await setup connection from Defguard Core and process it.
+    /// Await setup connection from XGuard Core and process it.
     ///
     /// Spins up a plain HTTP gRPC server on `addr` to handle the initial handshake: `Start`,
     /// `GetCsr`, `SendCert`.  The server shuts down as soon as `SendCert` delivers a
@@ -268,13 +268,13 @@ impl ProxySetupServer {
         let mut server_config = None;
 
         Server::builder()
-            .layer(InterceptorLayer::new(DefguardVersionInterceptor::new(
+            .layer(InterceptorLayer::new(XGuardVersionInterceptor::new(
                 own_version.clone(),
-                DefguardComponent::Core,
+                XGuardComponent::Core,
                 MIN_CORE_VERSION,
                 false,
             )))
-            .layer(DefguardVersionLayer::new(own_version.clone()))
+            .layer(XGuardVersionLayer::new(own_version.clone()))
             .add_service(proxy_setup_server::ProxySetupServer::new(self.clone()))
             .serve_with_shutdown(addr, async {
                 debug!("Waiting for SendCert to deliver configuration");
@@ -442,7 +442,7 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
         );
 
         debug!("Generating key pair");
-        let key_pair = match defguard_certs::generate_key_pair() {
+        let key_pair = match xguard_certs::generate_key_pair() {
             Ok(kp) => kp,
             Err(err) => {
                 error!("Failed to generate key pair: {err}");
@@ -458,13 +458,13 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
             subject_alt_names
         );
 
-        let csr = match defguard_certs::Csr::new(
+        let csr = match xguard_certs::Csr::new(
             &key_pair,
             &subject_alt_names,
             vec![
                 // TODO: Change it?
-                (defguard_certs::DnType::CommonName, "Defguard Proxy"),
-                (defguard_certs::DnType::OrganizationName, "Defguard"),
+                (xguard_certs::DnType::CommonName, "XGuard Proxy"),
+                (xguard_certs::DnType::OrganizationName, "XGuard"),
             ],
         ) {
             Ok(csr) => csr,
@@ -529,9 +529,9 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
             bundle.component_cert_der.len()
         );
         debug!("Parsing component certificate DER data");
-        let grpc_cert_pem = match defguard_certs::der_to_pem(
+        let grpc_cert_pem = match xguard_certs::der_to_pem(
             &bundle.component_cert_der,
-            defguard_certs::PemLabel::Certificate,
+            xguard_certs::PemLabel::Certificate,
         ) {
             Ok(pem) => pem,
             Err(err) => {
@@ -548,9 +548,9 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
             bundle.ca_cert_der.len()
         );
         debug!("Parsing CA certificate DER data");
-        let grpc_ca_cert_pem = match defguard_certs::der_to_pem(
+        let grpc_ca_cert_pem = match xguard_certs::der_to_pem(
             &bundle.ca_cert_der,
-            defguard_certs::PemLabel::Certificate,
+            xguard_certs::PemLabel::Certificate,
         ) {
             Ok(pem) => pem,
             Err(err) => {

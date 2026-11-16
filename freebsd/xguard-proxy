@@ -1,18 +1,18 @@
 #!/bin/sh
 
-# PROVIDE: defguard-proxy
+# PROVIDE: xguard-proxy
 # REQUIRE: NETWORKING wireguard
 # KEYWORD: shutdown
 
 . /etc/rc.subr
 
-name="defguard_proxy"
-rcvar=defguard_proxy_enable
-command="/usr/local/bin/defguard-proxy"
-config="/etc/defguard/proxy.toml"
+name="xguard_proxy"
+rcvar=xguard_proxy_enable
+command="/usr/local/bin/xguard-proxy"
+config="/etc/xguard/proxy.toml"
 start_cmd="${name}_proxy_start"
 
-defguard_proxy_start() {
+xguard_proxy_start() {
 	${command} --config ${config} &
 }
 

@@ -29,7 +29,7 @@ use axum_extra::extract::{
 use axum_server::tls_rustls::RustlsConfig;
 use clap::crate_version;
 use cookie::CookieBuilder;
-use defguard_version::{Version, server::DefguardVersionLayer};
+use xguard_version::{Version, server::XGuardVersionLayer};
 use serde::Serialize;
 use tokio::{
     sync::{broadcast, mpsc, oneshot, watch},
@@ -55,13 +55,13 @@ use crate::{
     setup::ProxySetupServer,
 };
 
-pub(crate) static ENROLLMENT_COOKIE_NAME: &str = "defguard_proxy";
+pub(crate) static ENROLLMENT_COOKIE_NAME: &str = "xguard_proxy";
 pub(crate) const ENROLLMENT_COOKIE_PATH: &str = "/api/v1/enrollment";
-pub(crate) static PASSWORD_RESET_COOKIE_NAME: &str = "defguard_proxy_password_reset";
+pub(crate) static PASSWORD_RESET_COOKIE_NAME: &str = "xguard_proxy_password_reset";
 pub(crate) const PASSWORD_RESET_COOKIE_PATH: &str = "/api/v1/password-reset";
 
-const DEFGUARD_CORE_CONNECTED_HEADER: &str = "defguard-core-connected";
-const DEFGUARD_CORE_VERSION_HEADER: &str = "defguard-core-version";
+const XGUARD_CORE_CONNECTED_HEADER: &str = "xguard-core-connected";
+const XGUARD_CORE_VERSION_HEADER: &str = "xguard-core-version";
 const RATE_LIMITER_CLEANUP_PERIOD: Duration = Duration::from_secs(60);
 // Drain active work within Docker's default 10-second stop window.
 const SERVER_SHUTDOWN_GRACE_PERIOD: Duration = Duration::from_secs(5);
@@ -261,7 +261,7 @@ async fn healthcheckgrpc(State(state): State<AppState>) -> (StatusCode, &'static
     } else {
         (
             StatusCode::SERVICE_UNAVAILABLE,
-            "Not connected to Defguard Core",
+            "Not connected to XGuard Core",
         )
     }
 }
@@ -297,7 +297,7 @@ async fn core_version_middleware(
     {
         response
             .headers_mut()
-            .insert(DEFGUARD_CORE_VERSION_HEADER, core_version_header);
+            .insert(XGUARD_CORE_VERSION_HEADER, core_version_header);
     }
 
     let core_connected = app_state.grpc_server.connected.load(Ordering::Relaxed);
@@ -306,7 +306,7 @@ async fn core_version_middleware(
 
     response
         .headers_mut()
-        .insert(DEFGUARD_CORE_CONNECTED_HEADER, core_connected_header);
+        .insert(XGUARD_CORE_CONNECTED_HEADER, core_connected_header);
 
     response
 }
@@ -321,8 +321,8 @@ async fn security_headers_middleware(
     let mut response = next.run(request).await;
     let headers = response.headers_mut();
 
-    // `X-Powered-By: Defguard` - server identification header
-    headers.insert(X_POWERED_BY, HeaderValue::from_static("Defguard"));
+    // `X-Powered-By: XGuard` - server identification header
+    headers.insert(X_POWERED_BY, HeaderValue::from_static("XGuard"));
 
     // `X-Content-Type-Options: nosniff` - prevents MIME-type sniffing/confusion attacks
     headers.insert(
@@ -434,7 +434,7 @@ pub async fn run_setup(env_config: &EnvConfig, logs_rx: LogsReceiver) -> anyhow:
             env_config,
         )
         .await?;
-    info!("Generated new gRPC TLS certificates and signed by Defguard Core");
+    info!("Generated new gRPC TLS certificates and signed by XGuard Core");
 
     Ok(tls_config)
 }
@@ -556,7 +556,7 @@ pub(crate) fn build_router(
         .layer(middleware::from_fn(move |req, next| {
             security_headers_middleware(Arc::clone(&tls_for_headers), req, next)
         }))
-        .layer(DefguardVersionLayer::new(Version::parse(VERSION)?));
+        .layer(XGuardVersionLayer::new(Version::parse(VERSION)?));
     debug!("Configured API server routing: {app:?}");
 
     Ok(app)
@@ -568,7 +568,7 @@ pub async fn run_server(
     logs_rx: Option<LogsReceiver>,
     shutdown_signal: impl Future<Output = anyhow::Result<()>>,
 ) -> anyhow::Result<()> {
-    info!("Starting Defguard Proxy server");
+    info!("Starting XGuard Proxy server");
     debug!("Using config: {env_config:?}");
 
     let mut tasks = JoinSet::new();
@@ -914,7 +914,7 @@ pub async fn run_server(
         Ok(())
     });
 
-    info!("Defguard Proxy HTTP server initialization complete");
+    info!("XGuard Proxy HTTP server initialization complete");
     tokio::pin!(shutdown_signal);
     loop {
         tokio::select! {

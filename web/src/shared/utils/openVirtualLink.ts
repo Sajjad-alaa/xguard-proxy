@@ -1,7 +1,7 @@
 import { externalLink } from '../consts';
 
 export const openClientLink = (value?: string): void => {
-  const href = value ?? externalLink.defguard.download;
+  const href = value ?? externalLink.xguard.download;
   openVirtualLink(href);
 };
 

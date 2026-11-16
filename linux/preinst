@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-USERNAME=defguard
+USERNAME=xguard
 
 if ! id -u ${USERNAME} >/dev/null 2>&1; then
 	useradd --system --user-group --no-create-home ${USERNAME}
 fi
 
-mkdir -p /etc/defguard
-chown -R ${USERNAME}:${USERNAME} /etc/defguard
-chmod 750 /etc/defguard
+mkdir -p /etc/xguard
+chown -R ${USERNAME}:${USERNAME} /etc/xguard
+chmod 750 /etc/xguard

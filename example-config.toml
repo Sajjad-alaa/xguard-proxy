@@ -1,4 +1,4 @@
-# This is an example config file for Defguard Edge.
+# This is an example config file for XGuard Edge.
 # To use it, fill in actual values for your deployment below.
 
 # port the API server will listen on
