@@ -50,7 +50,9 @@ use crate::{
     config::EnvConfig,
     error::ApiError,
     grpc::{ProxyServer, TlsConfig},
-    handlers::{desktop_client_mfa, enrollment, mfa_config, mfa_flow, password_reset, polling},
+    handlers::{
+        desktop_client_mfa, enrollment, mfa_config, mfa_flow, openid, password_reset, polling,
+    },
     setup::ProxySetupServer,
 };
 
@@ -491,6 +493,7 @@ pub(crate) fn api_router() -> Router<AppState> {
             .nest("/client-mfa", desktop_client_mfa::router())
             .nest("/mfa-flow", mfa_flow::router())
             .nest("/mfa-config", mfa_config::router())
+            .nest("/openid", openid::router())
             .route("/poll", post(polling::info))
             .route("/health", get(healthcheck))
             .route("/health-grpc", get(healthcheckgrpc))
