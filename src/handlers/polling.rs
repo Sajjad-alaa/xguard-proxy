@@ -7,7 +7,10 @@ use crate::{
     proto::{DeviceInfo, InstanceInfoRequest, InstanceInfoResponse, core_request, core_response},
 };
 
-#[instrument(level = "debug", skip(state))]
+/// Desktop client configuration sync: forwards the device's polling token and the revision it
+/// applied last; Core answers with the configuration or `not_modified`. Refusals keep their
+/// meaning: 401 unknown token, 403 disabled user, 429 polling too often.
+#[instrument(level = "debug", skip(state, req))]
 pub(crate) async fn info(
     State(state): State<AppState>,
     device_info: DeviceInfo,
@@ -21,7 +24,7 @@ pub(crate) async fn info(
     let payload = get_core_response(rx, None).await?;
 
     if let core_response::Payload::InstanceInfo(response) = payload {
-        info!("Retrieved info for polling request");
+        debug!("Retrieved info for polling request");
         Ok(Json(response))
     } else {
         error!("Received invalid gRPC response type");

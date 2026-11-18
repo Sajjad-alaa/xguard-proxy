@@ -43,6 +43,8 @@ pub enum ApiError {
     NotFound(String),
     #[error("Failed to get client IP address")]
     ClientIpError,
+    #[error("Too many requests: {0}")]
+    TooManyRequests(String),
     #[error("{0}")]
     WithCode(Box<ApiError>, CoreErrorCode),
 }
@@ -61,6 +63,7 @@ impl ApiError {
                 (StatusCode::PRECONDITION_REQUIRED, msg)
             }
             Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
+            Self::TooManyRequests(msg) => (StatusCode::TOO_MANY_REQUESTS, msg),
             Self::WithCode(inner, _) => inner.status_and_message(),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -121,6 +124,8 @@ impl From<CoreError> for ApiError {
             },
             Code::Unavailable => ApiError::CoreTimeout,
             Code::NotFound => ApiError::NotFound(status.to_string()),
+            // Core's limits (e.g. configuration polling too often).
+            Code::ResourceExhausted => ApiError::TooManyRequests(status.message().to_string()),
             _ => ApiError::Unexpected(status.to_string()),
         };
         match code {
