@@ -27,6 +27,7 @@ pub(crate) mod mobile_client;
 pub(crate) mod openid;
 pub(crate) mod password_reset;
 pub(crate) mod polling;
+pub(crate) mod posture;
 pub(crate) mod register_mfa;
 
 const X_FORWARDED_FOR: HeaderName = HeaderName::from_static("x-forwarded-for");

@@ -46,6 +46,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "InstanceInfoResponse",
             "NewDevice",
             "PasswordResetRequest",
+            "PostureConnectRequest",
+            "PostureConnectResponse",
         ])
         // Enable optional fields.
         .protoc_arg("--experimental_allow_proto3_optional")
@@ -56,6 +58,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "ClientMfaStartRequest.selected_methods",
             "#[serde(default)]",
         )
+        // Posture facts: every field may be left out by the client (unknown fact).
+        .type_attribute("DevicePostureFacts", "#[serde(default)]")
+        .type_attribute("PostureConnectRequest", "#[serde(default)]")
         // Sent only when setting up FIDO2, absent from code-factor request bodies.
         .field_attribute("CodeMfaSetupFinishRequest.name", "#[serde(default)]")
         .field_attribute(

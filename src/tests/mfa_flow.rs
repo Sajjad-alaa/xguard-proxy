@@ -59,6 +59,7 @@ async fn test_start_dispatches_to_mfa_flow_start() {
         location_id: 7,
         pubkey: "device-public-key".to_string(),
         selected_methods: vec![MfaMethod::Totp as i32],
+        posture: None,
     };
     let (status, body) = post_json(&app, "/api/v1/mfa-flow/start", &request).await;
 
@@ -238,6 +239,7 @@ async fn test_legacy_http_routes_keep_their_response_shapes() {
             location_id: 7,
             pubkey: "device-public-key".to_string(),
             method: MfaMethod::Totp as i32,
+            posture: None,
         },
     )
     .await;
