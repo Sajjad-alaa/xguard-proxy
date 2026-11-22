@@ -4,6 +4,18 @@ import z from 'zod';
 import { api } from '../../../shared/api/api';
 import { isPresent } from '../../../shared/xguard-ui/utils/isPresent';
 
+const isSafeExternalAuthUrl = (rawUrl: string): boolean => {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol === 'https:') return true;
+    if (parsed.protocol !== 'http:') return false;
+    const host = parsed.hostname.toLowerCase();
+    return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+  } catch {
+    return false;
+  }
+};
+
 const searchSchema = z.object({
   token: z.string().trim().min(1),
   step_attempt_id: z.string().trim().min(1).optional(),
@@ -36,8 +48,8 @@ export const Route = createFileRoute('/openid/mfa/')({
           replace: true,
         });
       });
-    if (!isPresent(response.data.url)) {
-      console.error('Missing URL in server response.');
+    if (!isPresent(response.data.url) || !isSafeExternalAuthUrl(response.data.url)) {
+      console.error('Missing or untrusted URL in server response.');
       throw redirect({
         to: '/openid/error',
         replace: true,
@@ -53,7 +65,7 @@ function RouteComponent() {
   });
 
   useEffect(() => {
-    if (loaderData) {
+    if (loaderData && isSafeExternalAuthUrl(loaderData)) {
       window.location.href = loaderData;
     }
   }, [loaderData]);

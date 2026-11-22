@@ -69,7 +69,7 @@ export const DirectoryEnrollmentForm = ({ onStarted }: Props) => {
       } catch (e) {
         setError(directoryEnrollmentErrorMessage((e as AxiosError).status));
         // Never keep a rejected password in the form.
-        formApi.setFieldValue('password', '');
+        formApi.resetField('password');
       }
     },
   });

@@ -30,6 +30,18 @@ const defaultValues: FormFields = {
   token: '',
 };
 
+const isSafeExternalAuthUrl = (rawUrl: string): boolean => {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol === 'https:') return true;
+    if (parsed.protocol !== 'http:') return false;
+    const host = parsed.hostname.toLowerCase();
+    return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+  } catch {
+    return false;
+  }
+};
+
 /** Starts a fresh sign-in on click, so it cannot expire while the page stays open. */
 const signInWithProvider = async (fallbackUrl: string) => {
   const response = await api.openId.authInfo
@@ -37,7 +49,10 @@ const signInWithProvider = async (fallbackUrl: string) => {
     .catch((e: AxiosError) => {
       console.error(e);
     });
-  window.location.assign(response?.data.url ?? fallbackUrl);
+  const target = response?.data.url ?? fallbackUrl;
+  if (isSafeExternalAuthUrl(target)) {
+    window.location.assign(target);
+  }
 };
 
 export const EnrollmentStartPage = () => {
@@ -105,7 +120,7 @@ export const EnrollmentStartPage = () => {
         <p>{m.enrollment_start_subtitle()}</p>
       </header>
       <SizedBox height={ThemeSpacing.Xl3} />
-      {isPresent(loaderData?.url) && isPresent(loaderData.button_display_name) && (
+      {isPresent(loaderData?.url) && isSafeExternalAuthUrl(loaderData.url) && (
         <>
           <ContainerWithIcon icon="globe">
             <header>
@@ -126,9 +141,13 @@ export const EnrollmentStartPage = () => {
                 <ExternalProviderButton
                   variant="default"
                   provider={loaderData.provider_kind ?? 'custom'}
-                  text={m.cmp_openid_button({
-                    provider: loaderData.button_display_name,
-                  })}
+                  text={
+                    loaderData.button_display_name
+                      ? m.cmp_openid_button({
+                          provider: loaderData.button_display_name,
+                        })
+                      : 'Sign in with external provider'
+                  }
                 />
               </a>
             </div>
