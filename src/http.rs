@@ -231,6 +231,7 @@ struct AppInfo {
     server_state: ServerState,
     display_password_reset: bool,
     display_download_step: bool,
+    display_directory_enrollment: bool,
 }
 
 async fn app_info(State(state): State<AppState>) -> Result<Json<AppInfo>, ApiError> {
@@ -249,6 +250,11 @@ async fn app_info(State(state): State<AppState>) -> Result<Json<AppInfo>, ApiErr
             .grpc_server
             .public_settings
             .display_download_step
+            .load(Ordering::Relaxed),
+        display_directory_enrollment: state
+            .grpc_server
+            .public_settings
+            .directory_enrollment
             .load(Ordering::Relaxed),
     }))
 }

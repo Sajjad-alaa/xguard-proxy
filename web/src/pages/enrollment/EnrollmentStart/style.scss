@@ -11,6 +11,12 @@
       }
     }
 
+    .directory-enrollment-error {
+      padding-top: var(--spacing-sm);
+      font: var(--t-body-sm-400);
+      color: var(--fg-critical);
+    }
+
     .openid-link {
       display: flex;
       flex-flow: row;

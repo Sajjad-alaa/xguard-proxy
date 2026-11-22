@@ -11,15 +11,88 @@ use crate::{
         session_cookie,
     },
     proto::{
-        ActivateUserRequest, DeviceConfigResponse, DeviceInfo, EnrollmentStartRequest,
-        EnrollmentStartResponse, ExistingDevice, NewDevice, core_request, core_response,
+        ActivateUserRequest, DeviceConfigResponse, DeviceInfo, DirectoryEnrollmentRequest,
+        EnrollmentStartRequest, EnrollmentStartResponse, ExistingDevice, NewDevice, core_request,
+        core_response,
     },
 };
+
+/// Longest username or email accepted for directory enrollment (Core applies the same limit).
+const MAX_DIRECTORY_USERNAME_LEN: usize = 256;
+/// Longest directory password accepted.
+const MAX_DIRECTORY_PASSWORD_LEN: usize = 1024;
+/// Core checks the password against the directory, which can take a moment.
+const CORE_DIRECTORY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(25);
+
+#[derive(serde::Deserialize)]
+pub(crate) struct DirectoryEnrollmentData {
+    username: String,
+    password: String,
+}
+
+#[derive(Debug, PartialEq, serde::Serialize)]
+pub(crate) struct DirectoryEnrollmentResult {
+    token: String,
+}
+
+/// Remote enrollment of a directory (LDAP / Active Directory) user with their directory
+/// password. Core checks the password and answers with a fresh enrollment token, which the web
+/// UI uses to start enrollment (`/enrollment/start`) or to configure the desktop client.
+///
+/// The password is only passed on to Core; it is never logged or stored.
+#[instrument(level = "debug", skip_all)]
+async fn directory_enrollment(
+    State(state): State<AppState>,
+    device_info: DeviceInfo,
+    Json(data): Json<DirectoryEnrollmentData>,
+) -> Result<Json<DirectoryEnrollmentResult>, ApiError> {
+    if !state
+        .grpc_server
+        .public_settings
+        .directory_enrollment
+        .load(std::sync::atomic::Ordering::Relaxed)
+    {
+        return Err(ApiError::NotFound(
+            "Enrollment with directory credentials is not enabled".into(),
+        ));
+    }
+    let username = data.username.trim();
+    if username.is_empty()
+        || username.len() > MAX_DIRECTORY_USERNAME_LEN
+        || data.password.is_empty()
+        || data.password.len() > MAX_DIRECTORY_PASSWORD_LEN
+    {
+        return Err(ApiError::BadRequest(
+            "Missing or invalid username or password".into(),
+        ));
+    }
+    let request = DirectoryEnrollmentRequest {
+        username: username.to_owned(),
+        password: data.password,
+    };
+    let rx = state.grpc_server.send(
+        core_request::Payload::DirectoryEnrollment(request),
+        device_info,
+    )?;
+    match get_core_response(rx, Some(CORE_DIRECTORY_TIMEOUT)).await? {
+        core_response::Payload::DirectoryEnrollment(response) => {
+            info!("Started a remote enrollment with directory credentials");
+            Ok(Json(DirectoryEnrollmentResult {
+                token: response.token,
+            }))
+        }
+        _ => {
+            error!("Received an invalid gRPC response type for directory enrollment");
+            Err(ApiError::InvalidResponseType)
+        }
+    }
+}
 
 pub(crate) fn router() -> Router<AppState> {
     Router::new()
         .nest("/register-mfa", register_mfa_router())
         .route("/start", post(start_enrollment_process))
+        .route("/directory", post(directory_enrollment))
         .route("/activate_user", post(activate_user))
         .route("/create_device", post(create_device))
         .route("/network_info", post(get_network_info))

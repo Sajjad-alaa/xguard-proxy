@@ -34,6 +34,17 @@ export type AppInfo = {
   server_state: 'setup' | 'disconnected' | 'connected';
   display_password_reset: boolean;
   display_download_step: boolean;
+  /** Directory users may start enrollment with their directory password. */
+  display_directory_enrollment?: boolean;
+};
+
+export type DirectoryEnrollmentRequest = {
+  username: string;
+  password: string;
+};
+
+export type DirectoryEnrollmentResponse = {
+  token: string;
 };
 
 export type EnrollmentSettings = {

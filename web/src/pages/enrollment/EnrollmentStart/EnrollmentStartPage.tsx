@@ -18,6 +18,7 @@ import { ExternalProviderButton } from '../../../shared/xguard-ui/components/Ext
 import { SizedBox } from '../../../shared/xguard-ui/components/SizedBox/SizedBox';
 import { ThemeSpacing } from '../../../shared/xguard-ui/types';
 import { isPresent } from '../../../shared/xguard-ui/utils/isPresent';
+import { DirectoryEnrollmentForm } from './DirectoryEnrollmentForm';
 
 const formSchema = z.object({
   token: z.string().trim().min(1, m.form_error_required()),
@@ -48,6 +49,7 @@ export const EnrollmentStartPage = () => {
   const { data: appInfo } = useQuery(getAppInfoQueryOptions);
 
   const showDownloadStep = appInfo?.data.display_download_step ?? true;
+  const showDirectoryEnrollment = appInfo?.data.display_directory_enrollment ?? false;
   const stepMax = showDownloadStep ? 2 : 1;
 
   const form = useAppForm({
@@ -130,6 +132,27 @@ export const EnrollmentStartPage = () => {
                 />
               </a>
             </div>
+          </ContainerWithIcon>
+          <Divider text={m.misc_or()} orientation="horizontal" />
+        </>
+      )}
+      {showDirectoryEnrollment && (
+        <>
+          <ContainerWithIcon icon="desktop" id="directory-enrollment">
+            <header>
+              <h5>{m.enrollment_start_directory_title()}</h5>
+              <SizedBox height={ThemeSpacing.Xs} />
+              <p>{m.enrollment_start_directory_subtitle()}</p>
+            </header>
+            <DirectoryEnrollmentForm
+              onStarted={(token, enrollmentData) => {
+                setEnrollment({ enrollmentData, token });
+                navigate({
+                  to: showDownloadStep ? '/download' : '/client-setup',
+                  replace: true,
+                });
+              }}
+            />
           </ContainerWithIcon>
           <Divider text={m.misc_or()} orientation="horizontal" />
         </>

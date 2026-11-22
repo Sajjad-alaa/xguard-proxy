@@ -50,6 +50,7 @@ pub(crate) fn test_public_settings(public_url: Option<&str>) -> PublicSettings {
         display_password_reset: true,
         display_download_step: true,
         public_url: public_url.map(str::to_owned),
+        directory_enrollment: false,
     }
 }
 
@@ -58,8 +59,22 @@ pub(crate) fn app_with_fake_core<F>(core: F) -> Router
 where
     F: Fn(core_request::Payload) -> core_response::Payload + Send + 'static,
 {
+    app_with_fake_core_and_settings(None, core)
+}
+
+/// Like [`app_with_fake_core`], with the public settings Core would have sent.
+pub(crate) fn app_with_fake_core_and_settings<F>(
+    settings: Option<PublicSettings>,
+    core: F,
+) -> Router
+where
+    F: Fn(core_request::Payload) -> core_response::Payload + Send + 'static,
+{
     let cookie_key = cookie_key();
     let server = test_proxy_server(Arc::clone(&cookie_key));
+    if let Some(settings) = settings {
+        server.public_settings.apply(settings);
+    }
     let mut requests = server.register_test_client();
     let responder = server.clone();
     tokio::spawn(async move {

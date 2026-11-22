@@ -1,4 +1,5 @@
 mod cookies;
+mod directory_enrollment;
 mod mfa_config;
 mod mfa_flow;
 mod mtls;

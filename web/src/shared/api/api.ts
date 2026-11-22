@@ -1,6 +1,8 @@
 import { get, post } from './api-client';
 import type {
   AppInfo,
+  DirectoryEnrollmentRequest,
+  DirectoryEnrollmentResponse,
   EmptyApiResponse,
   EnrollmentStartResponse,
   OpenIdAuthInfoRequest,
@@ -18,6 +20,9 @@ const api = {
   appInfo: get<AppInfo>('/info'),
   enrollment: {
     start: post<TokenRequest, EnrollmentStartResponse>('/enrollment/start'),
+    directory: post<DirectoryEnrollmentRequest, DirectoryEnrollmentResponse>(
+      '/enrollment/directory',
+    ),
   },
   password: {
     sendEmail: post<PasswordResetStartRequest, EmptyApiResponse>(

@@ -84,6 +84,8 @@ fn remove_disconnected_client(
 pub(crate) struct PublicSettingsState {
     pub(crate) display_password_reset: Arc<AtomicBool>,
     pub(crate) display_download_step: Arc<AtomicBool>,
+    /// Directory users may start enrollment with their directory password.
+    pub(crate) directory_enrollment: Arc<AtomicBool>,
     pub(crate) cookie_secure: Arc<AtomicBool>,
 }
 
@@ -92,6 +94,7 @@ impl Default for PublicSettingsState {
         Self {
             display_password_reset: Arc::new(AtomicBool::new(true)),
             display_download_step: Arc::new(AtomicBool::new(true)),
+            directory_enrollment: Arc::new(AtomicBool::new(false)),
             cookie_secure: Arc::new(AtomicBool::new(true)),
         }
     }
@@ -103,6 +106,8 @@ impl PublicSettingsState {
             .store(settings.display_password_reset, Ordering::Relaxed);
         self.display_download_step
             .store(settings.display_download_step, Ordering::Relaxed);
+        self.directory_enrollment
+            .store(settings.directory_enrollment, Ordering::Relaxed);
 
         // Default to `Secure` whenever the URL does not explicitly say the proxy is reached over
         // plaintext HTTP. A schemeless value like `proxy.example.com:8443` parses successfully with
@@ -698,6 +703,7 @@ mod tests {
         let state = PublicSettingsState {
             display_password_reset: Arc::new(AtomicBool::new(false)),
             display_download_step: Arc::new(AtomicBool::new(false)),
+            directory_enrollment: Arc::new(AtomicBool::new(false)),
             cookie_secure: Arc::new(AtomicBool::new(initial_cookie_secure)),
         };
         state.apply(settings);
@@ -870,6 +876,7 @@ mod tests {
                 display_password_reset: true,
                 display_download_step: false,
                 public_url: Some("https://edge.example.com".to_owned()),
+                directory_enrollment: false,
             },
             false,
         );
@@ -877,6 +884,12 @@ mod tests {
         assert!(state.display_password_reset.load(Ordering::Relaxed));
         assert!(!state.display_download_step.load(Ordering::Relaxed));
         assert!(state.cookie_secure.load(Ordering::Relaxed));
+        assert!(!state.directory_enrollment.load(Ordering::Relaxed));
+        state.apply(PublicSettings {
+            directory_enrollment: true,
+            ..test_public_settings(Some("https://edge.example.com"))
+        });
+        assert!(state.directory_enrollment.load(Ordering::Relaxed));
     }
 
     #[test]
@@ -886,6 +899,7 @@ mod tests {
                 display_password_reset: false,
                 display_download_step: true,
                 public_url: Some("http://edge.example.com".to_owned()),
+                directory_enrollment: false,
             },
             true,
         );
@@ -913,6 +927,7 @@ mod tests {
                 display_password_reset: true,
                 display_download_step: true,
                 public_url: Some("http://edge.example.com".to_owned()),
+                directory_enrollment: false,
             },
             true,
         );
@@ -922,6 +937,7 @@ mod tests {
             display_password_reset: false,
             display_download_step: false,
             public_url: Some("not a URL".to_owned()),
+            directory_enrollment: false,
         });
         assert!(state.cookie_secure.load(Ordering::Relaxed));
         assert!(!state.display_password_reset.load(Ordering::Relaxed));
@@ -950,6 +966,7 @@ mod tests {
                     display_password_reset: true,
                     display_download_step: true,
                     public_url: Some("http://edge.example.com".to_owned()),
+                    directory_enrollment: false,
                 },
                 true,
             );
