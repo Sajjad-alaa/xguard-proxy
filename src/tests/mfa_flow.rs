@@ -172,6 +172,7 @@ async fn test_remote_dispatches_to_mfa_flow_remote() {
     let state = AppState {
         grpc_server: server.clone(),
         cookie_key,
+        trusted_proxies: Arc::default(),
     };
     let receiver = send_mfa_flow_remote(
         &state,

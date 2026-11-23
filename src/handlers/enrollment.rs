@@ -99,7 +99,7 @@ pub(crate) fn router() -> Router<AppState> {
         .route("/register_mobile", post(register_mobile_auth))
 }
 
-#[instrument(level = "debug", skip(state))]
+#[instrument(level = "debug", skip_all)]
 async fn start_enrollment_process(
     State(state): State<AppState>,
     device_info: DeviceInfo,
@@ -155,7 +155,7 @@ async fn start_enrollment_process(
     }
 }
 
-#[instrument(level = "debug", skip(state, req))]
+#[instrument(level = "debug", skip_all)]
 async fn activate_user(
     State(state): State<AppState>,
     device_info: DeviceInfo,
@@ -195,7 +195,7 @@ async fn activate_user(
     }
 }
 
-#[instrument(level = "debug", skip(state, req))]
+#[instrument(level = "debug", skip_all)]
 async fn create_device(
     State(state): State<AppState>,
     device_info: DeviceInfo,
@@ -223,7 +223,7 @@ async fn create_device(
     }
 }
 
-#[instrument(level = "debug", skip(state))]
+#[instrument(level = "debug", skip_all)]
 async fn get_network_info(
     State(state): State<AppState>,
     device_info: DeviceInfo,

@@ -443,8 +443,16 @@ impl proxy_server::Proxy for ProxyServer {
                                 match payload {
                                     core_response::Payload::InitialInfo(info) => {
                                         info!("Received private cookies key");
-                                        let key = Key::from(&info.private_cookies_key);
-                                        *cookie_key.write().unwrap() = Some(key);
+                                        match Key::try_from(info.private_cookies_key.as_slice()) {
+                                            Ok(key) => {
+                                                *cookie_key.write().unwrap() = Some(key);
+                                            }
+                                            Err(err) => {
+                                                error!(
+                                                    "Invalid private cookies key length received from Core: {err}"
+                                                );
+                                            }
+                                        }
                                     }
                                     core_response::Payload::HttpsCerts(certs) => {
                                         info!("Received HTTPS certificates from Core");

@@ -125,7 +125,7 @@ export const ConfigureClientPage = () => {
   const [manualOpen, setManualOpen] = useState(false);
 
   const deepLink = () =>
-    `xguard://addinstance?token=${pageData.token}&url=${pageData.enrollmentData.instance.proxy_url}`;
+    `xguard://addinstance?token=${encodeURIComponent(pageData.token)}&url=${encodeURIComponent(pageData.enrollmentData.instance.proxy_url)}`;
 
   const qrData = () => {
     return btoa(

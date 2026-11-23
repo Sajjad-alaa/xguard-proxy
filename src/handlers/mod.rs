@@ -1,19 +1,20 @@
 use std::{
     net::{IpAddr, SocketAddr},
+    sync::Arc,
     time::Duration,
 };
 
 use axum::{
     extract::{ConnectInfo, FromRequestParts},
-    http::{HeaderName, header::FORWARDED, request::Parts},
+    http::{HeaderMap, HeaderName, header::FORWARDED, request::Parts},
 };
-use axum_client_ip::{RightmostForwarded, RightmostXForwardedFor};
 use axum_extra::{TypedHeader, extract::PrivateCookieJar, headers::UserAgent};
 use tokio::{sync::oneshot::Receiver, time};
 use tonic::Code;
 
 use super::proto::DeviceInfo;
 use crate::{
+    config::IpCidr,
     error::{ApiError, is_oidc_not_completed},
     http::ENROLLMENT_COOKIE_NAME,
     proto::core_response::Payload,
@@ -32,8 +33,111 @@ pub(crate) mod register_mfa;
 
 const X_FORWARDED_FOR: HeaderName = HeaderName::from_static("x-forwarded-for");
 
-/// Extracts client IP address. It tries "forwarded", then "x-forwarded-for" headers,
-/// with a fallback to `ConnectInfo` when these headers are absent.
+fn parse_ip_token(raw: &str) -> Option<IpAddr> {
+    let trimmed = raw.trim().trim_matches('"');
+    if trimmed.is_empty() {
+        return None;
+    }
+    if let Ok(ip) = trimmed.parse::<IpAddr>() {
+        return Some(ip);
+    }
+    if let Ok(sock) = trimmed.parse::<SocketAddr>() {
+        return Some(sock.ip());
+    }
+    if let Some(inner) = trimmed.strip_prefix('[').and_then(|s| s.strip_suffix(']')) {
+        return inner.parse::<IpAddr>().ok();
+    }
+    None
+}
+
+fn pick_rightmost_untrusted(ips: &[IpAddr], trusted_proxies: &[IpCidr]) -> Option<IpAddr> {
+    if ips.is_empty() {
+        return None;
+    }
+    ips.iter()
+        .rev()
+        .copied()
+        .find(|ip| !trusted_proxies.iter().any(|net| net.contains(*ip)))
+        .or_else(|| ips.last().copied())
+}
+
+fn parse_forwarded_header_ips(headers: &HeaderMap) -> Vec<IpAddr> {
+    let mut ips = Vec::new();
+    for header_val in headers.get_all(FORWARDED) {
+        let Ok(s) = header_val.to_str() else {
+            continue;
+        };
+        for entry in s.split(',') {
+            for param in entry.split(';') {
+                let param = param.trim();
+                let Some((key, value)) = param.split_once('=') else {
+                    continue;
+                };
+                if key.trim().eq_ignore_ascii_case("for")
+                    && let Some(ip) = parse_ip_token(value)
+                {
+                    ips.push(ip);
+                }
+            }
+        }
+    }
+    ips
+}
+
+fn parse_xff_header_ips(headers: &HeaderMap) -> Vec<IpAddr> {
+    let mut ips = Vec::new();
+    for header_val in headers.get_all(&X_FORWARDED_FOR) {
+        let Ok(s) = header_val.to_str() else {
+            continue;
+        };
+        for part in s.split(',') {
+            if let Some(ip) = parse_ip_token(part) {
+                ips.push(ip);
+            }
+        }
+    }
+    ips
+}
+
+/// Extract client IP address, honoring `Forwarded` / `X-Forwarded-For` ONLY when the TCP
+/// peer IP (`peer_ip`) belongs to `trusted_proxies`.
+pub(crate) fn extract_client_ip(
+    headers: &HeaderMap,
+    peer_ip: Option<IpAddr>,
+    trusted_proxies: &[IpCidr],
+) -> Option<IpAddr> {
+    let from_headers = || {
+        let forwarded = parse_forwarded_header_ips(headers);
+        if let Some(ip) = pick_rightmost_untrusted(&forwarded, trusted_proxies) {
+            return Some(ip);
+        }
+        let xff = parse_xff_header_ips(headers);
+        pick_rightmost_untrusted(&xff, trusted_proxies)
+    };
+
+    match peer_ip {
+        Some(peer) => {
+            if trusted_proxies.iter().any(|net| net.contains(peer)) {
+                from_headers().or(Some(peer))
+            } else {
+                Some(peer)
+            }
+        }
+        None => {
+            #[cfg(test)]
+            {
+                from_headers()
+            }
+            #[cfg(not(test))]
+            {
+                None
+            }
+        }
+    }
+}
+
+/// Extracts client IP address from `ConnectInfo`, honoring forwarding headers only when the peer
+/// IP is configured in `trusted_proxies`.
 pub struct ClientIpAddr(pub IpAddr);
 
 impl<S> FromRequestParts<S> for ClientIpAddr
@@ -42,27 +146,18 @@ where
 {
     type Rejection = ApiError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let ip_addr = if parts.headers.contains_key(FORWARDED) {
-            let RightmostForwarded(ip_addr) = RightmostForwarded::from_request_parts(parts, state)
-                .await
-                .map_err(|_| ApiError::ClientIpError)?;
-            ip_addr
-        } else if parts.headers.contains_key(X_FORWARDED_FOR) {
-            let RightmostXForwardedFor(ip_addr) =
-                RightmostXForwardedFor::from_request_parts(parts, state)
-                    .await
-                    .map_err(|_| ApiError::ClientIpError)?;
-            ip_addr
-        } else {
-            let ConnectInfo(socket_addr) =
-                ConnectInfo::<SocketAddr>::from_request_parts(parts, state)
-                    .await
-                    .map_err(|_| ApiError::ClientIpError)?;
-            socket_addr.ip()
-        };
-
-        Ok(Self(ip_addr))
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        let peer_ip = parts
+            .extensions
+            .get::<ConnectInfo<SocketAddr>>()
+            .map(|ConnectInfo(addr)| addr.ip());
+        let trusted = parts
+            .extensions
+            .get::<Arc<Vec<IpCidr>>>()
+            .map_or(&[][..], |v| v.as_slice());
+        extract_client_ip(&parts.headers, peer_ip, trusted)
+            .map(Self)
+            .ok_or(ApiError::ClientIpError)
     }
 }
 
@@ -257,5 +352,48 @@ mod tests {
             .expect("should succeed");
 
         assert!(device_info.user_agent.is_none());
+    }
+
+    #[test]
+    fn extract_client_ip_ignores_forwarding_headers_from_untrusted_peer() {
+        let mut headers = HeaderMap::new();
+        headers.insert(FORWARDED, "for=198.51.100.7".parse().unwrap());
+        headers.insert(X_FORWARDED_FOR, "198.51.100.8".parse().unwrap());
+
+        let peer: IpAddr = "203.0.113.9".parse().unwrap();
+        let trusted: Vec<IpCidr> = vec!["10.0.0.0/8".parse().unwrap()];
+
+        assert_eq!(extract_client_ip(&headers, Some(peer), &[]), Some(peer));
+        assert_eq!(
+            extract_client_ip(&headers, Some(peer), &trusted),
+            Some(peer)
+        );
+    }
+
+    #[test]
+    fn extract_client_ip_honors_rightmost_untrusted_from_trusted_proxy() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            X_FORWARDED_FOR,
+            "1.1.1.1, 198.51.100.42, 10.0.0.5".parse().unwrap(),
+        );
+        let peer: IpAddr = "10.0.0.2".parse().unwrap();
+        let trusted: Vec<IpCidr> = vec!["10.0.0.0/8".parse().unwrap()];
+        assert_eq!(
+            extract_client_ip(&headers, Some(peer), &trusted),
+            Some("198.51.100.42".parse().unwrap())
+        );
+
+        let mut fwd_headers = HeaderMap::new();
+        fwd_headers.insert(
+            FORWARDED,
+            r#"for=203.0.113.10;proto=https, for="[::ffff:10.0.0.9]""#
+                .parse()
+                .unwrap(),
+        );
+        assert_eq!(
+            extract_client_ip(&fwd_headers, Some(peer), &trusted),
+            Some("203.0.113.10".parse().unwrap())
+        );
     }
 }

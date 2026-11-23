@@ -8,7 +8,8 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use rustls_pki_types::{CertificateDer, UnixTime};
+use rustls::sign::CertifiedKey;
+use rustls_pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer, UnixTime};
 use tokio::{
     fs::OpenOptions,
     io::AsyncWriteExt,
@@ -36,6 +37,36 @@ pub const GRPC_CERT_NAME: &str = "proxy_grpc_cert.pem";
 pub const GRPC_KEY_NAME: &str = "proxy_grpc_key.pem";
 pub const GRPC_CA_CERT_NAME: &str = "grpc_ca_cert.pem";
 pub const CORE_CLIENT_CERT_NAME: &str = "core_client_cert.pem";
+
+fn constant_time_eq(a: &str, b: &str) -> bool {
+    let a = a.as_bytes();
+    let b = b.as_bytes();
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    std::hint::black_box(diff) == 0
+}
+
+fn verify_component_cert_matches_key_pair(
+    component_der: &[u8],
+    key_pair: &xguard_certs::RcGenKeyPair,
+) -> Result<(), String> {
+    let pkcs8 = key_pair.serialize_der();
+    let private_key = PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(pkcs8));
+    let signing_key = rustls::crypto::aws_lc_rs::sign::any_supported_type(&private_key)
+        .map_err(|err| format!("Failed to load generated CSR signing key: {err}"))?;
+    let certified_key = CertifiedKey::new(
+        vec![CertificateDer::from(component_der.to_vec())],
+        signing_key,
+    );
+    certified_key
+        .keys_match()
+        .map_err(|_| "Component certificate public key does not match CSR key pair".to_owned())
+}
 
 /// Verify that both `component_der` and `core_client_der` are signed by `ca_der`.
 ///
@@ -192,6 +223,7 @@ pub(crate) struct ProxySetupServer {
     key_pair: Arc<Mutex<Option<xguard_certs::RcGenKeyPair>>>,
     logs_rx: LogsReceiver,
     current_session_token: Arc<Mutex<Option<String>>>,
+    expected_adoption_token: Option<String>,
     setup_tx: Arc<tokio::sync::Mutex<Option<oneshot::Sender<TlsConfig>>>>,
     setup_rx: Arc<tokio::sync::Mutex<oneshot::Receiver<TlsConfig>>>,
     adoption_expired: Arc<AtomicBool>,
@@ -204,6 +236,7 @@ impl Clone for ProxySetupServer {
             key_pair: Arc::clone(&self.key_pair),
             logs_rx: Arc::clone(&self.logs_rx),
             current_session_token: Arc::clone(&self.current_session_token),
+            expected_adoption_token: self.expected_adoption_token.clone(),
             setup_tx: Arc::clone(&self.setup_tx),
             setup_rx: Arc::clone(&self.setup_rx),
             adoption_expired: Arc::clone(&self.adoption_expired),
@@ -213,12 +246,17 @@ impl Clone for ProxySetupServer {
 }
 
 impl ProxySetupServer {
-    pub fn new(logs_rx: LogsReceiver, cert_dir: PathBuf) -> Self {
+    pub fn new(
+        logs_rx: LogsReceiver,
+        cert_dir: PathBuf,
+        expected_adoption_token: Option<String>,
+    ) -> Self {
         let (setup_tx, setup_rx) = oneshot::channel();
         Self {
             key_pair: Arc::new(Mutex::new(None)),
             logs_rx,
             current_session_token: Arc::new(Mutex::new(None)),
+            expected_adoption_token,
             setup_tx: Arc::new(tokio::sync::Mutex::new(Some(setup_tx))),
             setup_rx: Arc::new(tokio::sync::Mutex::new(setup_rx)),
             adoption_expired: Arc::new(AtomicBool::new(false)),
@@ -247,6 +285,12 @@ impl ProxySetupServer {
             "gRPC waiting for setup connection from Core on {addr} for {} min",
             adoption_timeout.as_secs() / 60
         );
+
+        if !addr.ip().is_loopback() && self.expected_adoption_token.is_none() {
+            warn!(
+                "Edge adoption listening on non-loopback address {addr} without XGUARD_PROXY_ADOPTION_TOKEN; any reachable Core can claim this Edge before the adoption timeout"
+            );
+        }
 
         let adoption_expired = Arc::clone(&self.adoption_expired);
         let (cancel_tx, cancel_rx) = oneshot::channel::<()>();
@@ -343,7 +387,7 @@ impl ProxySetupServer {
             .lock()
             .expect("Failed to acquire lock on current session token during Edge setup"))
         .as_ref()
-        .is_some_and(|t| t == token);
+        .is_some_and(|t| constant_time_eq(t, token));
         debug!("Authorization validation result: {}", is_valid);
         is_valid
     }
@@ -374,6 +418,13 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
             .and_then(|v| v.to_str().ok())
             .and_then(|s| s.strip_prefix("Bearer "))
             .ok_or_else(|| Status::unauthenticated("Missing or invalid authorization token"))?;
+
+        if let Some(expected) = &self.expected_adoption_token
+            && !constant_time_eq(token, expected)
+        {
+            error!("Rejected setup Start request with invalid adoption token");
+            return Err(Status::unauthenticated("Invalid adoption token"));
+        }
 
         debug!("Setup session authenticated successfully");
         self.initialize_setup_session(token.to_string());
@@ -512,6 +563,33 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
 
         let bundle = request.into_inner();
 
+        let key_pair = {
+            let key_pair = self
+                .key_pair
+                .lock()
+                .expect("Failed to acquire lock on key pair during Edge setup when trying to receive certificate")
+                .take();
+            if let Some(kp) = key_pair {
+                kp
+            } else {
+                error!(
+                    "Key pair not found during Edge setup. Key pair generation step might have failed."
+                );
+                self.clear_setup_session();
+                return Err(Status::internal(
+                    "Key pair not found during Edge setup. Key pair generation step might have failed.",
+                ));
+            }
+        };
+
+        if let Err(reason) =
+            verify_component_cert_matches_key_pair(&bundle.component_cert_der, &key_pair)
+        {
+            error!("Certificate bundle public key check failed: {reason}");
+            self.clear_setup_session();
+            return Err(Status::invalid_argument(reason));
+        }
+
         debug!("Validating certificate bundle received from Core");
         if let Err(reason) = validate_cert_bundle(
             &bundle.ca_cert_der,
@@ -567,25 +645,6 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
             bundle.core_client_cert_der.len()
         );
 
-        let key_pair = {
-            let key_pair = self
-				.key_pair
-				.lock()
-				.expect("Failed to acquire lock on key pair during Edge setup when trying to receive certificate")
-				.take();
-            if let Some(kp) = key_pair {
-                kp
-            } else {
-                error!(
-                    "Key pair not found during Edge setup. Key pair generation step might have failed."
-                );
-                self.clear_setup_session();
-                return Err(Status::internal(
-                    "Key pair not found during Edge setup. Key pair generation step might have failed.",
-                ));
-            }
-        };
-
         let configuration = TlsConfig {
             grpc_key_pem: key_pair.serialize_pem(),
             grpc_cert_pem,
@@ -622,5 +681,71 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
 
         debug!("Confirming successful setup to Core");
         Ok(Response::new(()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use xguard_certs::{CertificateAuthority, Csr, generate_key_pair};
+
+    use super::*;
+    use crate::proto::proxy_setup_server::ProxySetup;
+
+    fn test_server(adoption_token: Option<String>) -> ProxySetupServer {
+        let (_tx, rx) = mpsc::channel(4);
+        ProxySetupServer::new(
+            Arc::new(tokio::sync::Mutex::new(rx)),
+            PathBuf::from("/tmp/xguard-setup-test"),
+            adoption_token,
+        )
+    }
+
+    #[tokio::test]
+    async fn send_cert_rejects_mismatched_component_public_key() {
+        let ca = CertificateAuthority::new("Test CA", "ca@test.local", 365).unwrap();
+        let expected_key = generate_key_pair().unwrap();
+        let wrong_key = generate_key_pair().unwrap();
+        let wrong_csr = Csr::new(&wrong_key, &["127.0.0.1".to_owned()], Vec::new()).unwrap();
+        let wrong_cert = ca.sign_server_cert(&wrong_csr).unwrap();
+        let core_client = ca.issue_core_client_cert("core-client").unwrap();
+
+        let server = test_server(None);
+        server.initialize_setup_session("session-tok".to_owned());
+        *server.key_pair.lock().unwrap() = Some(expected_key);
+
+        let mut req = Request::new(CertBundle {
+            ca_cert_der: ca.cert_der().to_vec(),
+            component_cert_der: wrong_cert.der().to_vec(),
+            core_client_cert_der: core_client.cert_der,
+        });
+        req.metadata_mut()
+            .insert(AUTH_HEADER, "Bearer session-tok".parse().unwrap());
+
+        let status = server
+            .send_cert(req)
+            .await
+            .expect_err("cert with different SPKI must be rejected");
+        assert_eq!(status.code(), tonic::Code::InvalidArgument);
+        assert!(status.message().contains("does not match CSR key pair"));
+    }
+
+    #[tokio::test]
+    async fn start_enforces_expected_adoption_token() {
+        let server = test_server(Some("expected-secret".to_owned()));
+
+        let mut wrong_req = Request::new(());
+        wrong_req
+            .metadata_mut()
+            .insert(AUTH_HEADER, "Bearer wrong-secret".parse().unwrap());
+        let Err(err) = server.start(wrong_req).await else {
+            panic!("mismatched adoption token must be rejected");
+        };
+        assert_eq!(err.code(), tonic::Code::Unauthenticated);
+
+        let mut ok_req = Request::new(());
+        ok_req
+            .metadata_mut()
+            .insert(AUTH_HEADER, "Bearer expected-secret".parse().unwrap());
+        assert!(server.start(ok_req).await.is_ok());
     }
 }

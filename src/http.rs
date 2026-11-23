@@ -14,7 +14,7 @@ use std::{
 
 use anyhow::Context;
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     body::Body,
     extract::{ConnectInfo, DefaultBodyLimit, FromRef, State},
     http::{HeaderName, HeaderValue, Request, Response, StatusCode, header},
@@ -35,7 +35,8 @@ use tokio::{
     task::JoinSet,
 };
 use tower_governor::{
-    GovernorLayer, governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor,
+    GovernorLayer, errors::GovernorError, governor::GovernorConfigBuilder,
+    key_extractor::KeyExtractor,
 };
 use tower_http::{
     timeout::TimeoutLayer,
@@ -47,12 +48,12 @@ use xguard_version::{Version, server::XGuardVersionLayer};
 use crate::{
     LogsReceiver, VERSION,
     assets::{index, web_asset},
-    config::EnvConfig,
+    config::{EnvConfig, IpCidr},
     error::ApiError,
     grpc::{ProxyServer, TlsConfig},
     handlers::{
-        desktop_client_mfa, enrollment, mfa_config, mfa_flow, openid, password_reset, polling,
-        posture,
+        desktop_client_mfa, enrollment, extract_client_ip, mfa_config, mfa_flow, openid,
+        password_reset, polling, posture,
     },
     setup::ProxySetupServer,
 };
@@ -69,7 +70,6 @@ const RATE_LIMITER_CLEANUP_PERIOD: Duration = Duration::from_secs(60);
 const SERVER_SHUTDOWN_GRACE_PERIOD: Duration = Duration::from_secs(5);
 const SERVER_SHUTDOWN_FORCE_TIMEOUT: Duration = Duration::from_secs(6);
 const SERVER_SHUTDOWN_DEADLINE: Duration = Duration::from_secs(7);
-const X_FORWARDED_FOR: &str = "x-forwarded-for";
 /// Default request body size limit applied globally to every route.
 const REQUEST_BODY_LIMIT: usize = 256 * 1024; // 256 KB
 
@@ -132,6 +132,24 @@ where
 
 /// Maximum time a single request may take before the server returns 408.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+
+#[derive(Clone)]
+struct TrustedIpKeyExtractor {
+    trusted_proxies: Arc<Vec<IpCidr>>,
+}
+
+impl KeyExtractor for TrustedIpKeyExtractor {
+    type Key = IpAddr;
+
+    fn extract<T>(&self, req: &Request<T>) -> Result<Self::Key, GovernorError> {
+        let peer_ip = req
+            .extensions()
+            .get::<ConnectInfo<SocketAddr>>()
+            .map(|ConnectInfo(addr)| addr.ip());
+        extract_client_ip(req.headers(), peer_ip, &self.trusted_proxies)
+            .ok_or(GovernorError::UnableToExtractKey)
+    }
+}
 // Header name constants not yet present in the `http` crate v1.x standard set.
 const X_POWERED_BY: HeaderName = HeaderName::from_static("x-powered-by");
 const PERMISSIONS_POLICY: HeaderName = HeaderName::from_static("permissions-policy");
@@ -145,13 +163,19 @@ pub use crate::setup::{CORE_CLIENT_CERT_NAME, GRPC_CA_CERT_NAME, GRPC_CERT_NAME,
 pub(crate) struct AppState {
     pub(crate) grpc_server: ProxyServer,
     pub(crate) cookie_key: Arc<RwLock<Option<Key>>>,
+    pub(crate) trusted_proxies: Arc<Vec<IpCidr>>,
 }
 
 impl AppState {
-    pub(crate) fn new(grpc_server: ProxyServer, cookie_key: Arc<RwLock<Option<Key>>>) -> Self {
+    pub(crate) fn new(
+        grpc_server: ProxyServer,
+        cookie_key: Arc<RwLock<Option<Key>>>,
+        trusted_proxies: Arc<Vec<IpCidr>>,
+    ) -> Self {
         Self {
             grpc_server,
             cookie_key,
+            trusted_proxies,
         }
     }
 
@@ -277,20 +301,16 @@ async fn healthcheckgrpc(State(state): State<AppState>) -> (StatusCode, &'static
 // Retrieves client address from the request. Uses either the left most x-forwarded-for
 // header value, or socket address if the header is not present.
 fn get_client_addr(request: &Request<Body>) -> String {
-    request
-        .headers()
-        .get(X_FORWARDED_FOR)
-        .and_then(|h| h.to_str().ok())
-        .and_then(|h| h.split(',').next())
-        .map_or_else(
-            || {
-                request
-                    .extensions()
-                    .get::<ConnectInfo<SocketAddr>>()
-                    .map_or_else(|| "unknown".to_string(), |addr| addr.0.to_string())
-            },
-            |ip| ip.trim().to_string(),
-        )
+    let peer_ip = request
+        .extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .map(|addr| addr.0.ip());
+    let trusted = request
+        .extensions()
+        .get::<Arc<Vec<IpCidr>>>()
+        .map_or(&[][..], |v| v.as_slice());
+    extract_client_ip(request.headers(), peer_ip, trusted)
+        .map_or_else(|| "unknown".to_string(), |ip| ip.to_string())
 }
 
 async fn core_version_middleware(
@@ -365,11 +385,13 @@ async fn security_headers_middleware(
     // `X-Frame-Options: DENY` - clickjacking defense for browsers without CSP frame-ancestors support
     headers.insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
 
-    // `Content-Security-Policy: frame-ancestors 'none'` - prevents framing/clickjacking
+    // Restrict resource loading and forbid framing/clickjacking.
     // Use entry/or_insert so individual handlers can override CSP (e.g. per-request nonces)
-    headers
-        .entry(header::CONTENT_SECURITY_POLICY)
-        .or_insert(HeaderValue::from_static("frame-ancestors 'none';"));
+    headers.entry(header::CONTENT_SECURITY_POLICY).or_insert(
+        HeaderValue::from_static(
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';",
+        ),
+    );
 
     // `Strict-Transport-Security` - only sent over TLS; ignored and potentially harmful over plain HTTP (RFC 6797 §7.2)
     let tls = tls_active.load(Ordering::Relaxed);
@@ -430,7 +452,11 @@ pub async fn run_setup(env_config: &EnvConfig, logs_rx: LogsReceiver) -> anyhow:
         "No gRPC TLS certificates found at {}, new certificates will be obtained during setup",
         cert_dir.display()
     );
-    let setup_server = ProxySetupServer::new(logs_rx, cert_dir.to_path_buf());
+    let setup_server = ProxySetupServer::new(
+        logs_rx,
+        cert_dir.to_path_buf(),
+        env_config.adoption_token.clone(),
+    );
     let tls_config = setup_server
         .await_initial_setup(
             SocketAddr::new(
@@ -521,6 +547,8 @@ pub(crate) fn build_router(
         ensure_configured,
     ));
 
+    let trusted_proxies = Arc::clone(&state.trusted_proxies);
+
     // Build axum app
     let mut app = Router::new()
         .route("/", get(index))
@@ -545,14 +573,15 @@ pub(crate) fn build_router(
                     info_span!(
                         "http_request",
                         method = ?request.method(),
-                        path = ?request.uri(),
+                        path = request.uri().path(),
                         // TODO: headers only in debug logs
                         // headers = ?request.headers(),
                         client_addr = addr,
                     )
                 })
                 .on_response(trace::DefaultOnResponse::new().level(Level::DEBUG)),
-        );
+        )
+        .layer(Extension(trusted_proxies));
 
     // Global request body size limit; all proxy endpoints have small payloads.
     app = app.layer(DefaultBodyLimit::max(REQUEST_BODY_LIMIT));
@@ -709,7 +738,8 @@ pub async fn run_server(
     // build application
     debug!("Setting up API server");
     let tls_active = Arc::new(AtomicBool::new(false));
-    let shared_state = AppState::new(grpc_server, cookie_key);
+    let trusted_proxies = Arc::new(env_config.trusted_proxies.clone());
+    let shared_state = AppState::new(grpc_server, cookie_key, Arc::clone(&trusted_proxies));
 
     // Setup tower_governor rate-limiter
     debug!(
@@ -717,7 +747,9 @@ pub async fn run_server(
         env_config.rate_limit_per_second, env_config.rate_limit_burst
     );
     let governor_conf = GovernorConfigBuilder::default()
-        .key_extractor(SmartIpKeyExtractor)
+        .key_extractor(TrustedIpKeyExtractor {
+            trusted_proxies: Arc::clone(&trusted_proxies),
+        })
         .per_second(env_config.rate_limit_per_second)
         .burst_size(env_config.rate_limit_burst)
         .finish();

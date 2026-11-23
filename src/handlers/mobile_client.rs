@@ -28,7 +28,7 @@ pub(crate) struct RegisterMobileAuth {
     pub device_pub_key: String,
 }
 
-#[instrument(level = "debug", skip(state))]
+#[instrument(level = "debug", skip_all)]
 pub(crate) async fn register_mobile_auth(
     State(state): State<AppState>,
     device_info: DeviceInfo,

@@ -22,7 +22,7 @@ pub(crate) fn router() -> Router<AppState> {
         .route("/reset", post(reset_password))
 }
 
-#[instrument(level = "debug", skip(state))]
+#[instrument(level = "debug", skip_all)]
 async fn request_password_reset(
     State(state): State<AppState>,
     device_info: DeviceInfo,
@@ -44,7 +44,7 @@ async fn request_password_reset(
     }
 }
 
-#[instrument(level = "debug", skip(state))]
+#[instrument(level = "debug", skip_all)]
 async fn start_password_reset(
     State(state): State<AppState>,
     device_info: DeviceInfo,
@@ -92,7 +92,7 @@ async fn start_password_reset(
     }
 }
 
-#[instrument(level = "debug", skip(state, req))]
+#[instrument(level = "debug", skip_all)]
 async fn reset_password(
     State(state): State<AppState>,
     device_info: DeviceInfo,

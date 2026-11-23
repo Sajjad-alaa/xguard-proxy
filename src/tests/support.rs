@@ -98,6 +98,7 @@ where
     api_router().with_state(AppState {
         grpc_server: server,
         cookie_key,
+        trusted_proxies: Arc::default(),
     })
 }
 

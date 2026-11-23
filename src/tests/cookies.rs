@@ -36,7 +36,7 @@ fn test_app(public_url: Option<&str>) -> TestApp {
 
     let core_requests = server.register_test_client();
     let response_server = server.clone();
-    let state = AppState::new(server, cookie_key);
+    let state = AppState::new(server, cookie_key, Arc::default());
     let app = build_router(state, |router| router, Arc::new(AtomicBool::new(false)))
         .expect("Failed to build test router");
 
