@@ -30,6 +30,7 @@ use xguard_version::{
 use crate::{
     LogsReceiver, MIN_CORE_VERSION, VERSION, acme,
     acme::Port80Permit,
+    client_downloads::ClientDownloadLinks,
     error::ApiError,
     http::{CORE_CLIENT_CERT_NAME, GRPC_CA_CERT_NAME, GRPC_CERT_NAME, GRPC_KEY_NAME},
     proto::{
@@ -87,6 +88,8 @@ pub(crate) struct PublicSettingsState {
     /// Directory users may start enrollment with their directory password.
     pub(crate) directory_enrollment: Arc<AtomicBool>,
     pub(crate) cookie_secure: Arc<AtomicBool>,
+    /// Where the download pages link to.
+    pub(crate) client_downloads: Arc<RwLock<ClientDownloadLinks>>,
 }
 
 impl Default for PublicSettingsState {
@@ -96,6 +99,7 @@ impl Default for PublicSettingsState {
             display_download_step: Arc::new(AtomicBool::new(true)),
             directory_enrollment: Arc::new(AtomicBool::new(false)),
             cookie_secure: Arc::new(AtomicBool::new(true)),
+            client_downloads: Arc::new(RwLock::new(ClientDownloadLinks::default())),
         }
     }
 }
@@ -108,6 +112,11 @@ impl PublicSettingsState {
             .store(settings.display_download_step, Ordering::Relaxed);
         self.directory_enrollment
             .store(settings.directory_enrollment, Ordering::Relaxed);
+        *self
+            .client_downloads
+            .write()
+            .expect("Failed to lock client download links") =
+            ClientDownloadLinks::from_core(settings.client_downloads);
 
         // Default to `Secure` whenever the URL does not explicitly say the proxy is reached over
         // plaintext HTTP. A schemeless value like `proxy.example.com:8443` parses successfully with
@@ -713,6 +722,7 @@ mod tests {
             display_download_step: Arc::new(AtomicBool::new(false)),
             directory_enrollment: Arc::new(AtomicBool::new(false)),
             cookie_secure: Arc::new(AtomicBool::new(initial_cookie_secure)),
+            client_downloads: Arc::default(),
         };
         state.apply(settings);
         state
@@ -885,6 +895,7 @@ mod tests {
                 display_download_step: false,
                 public_url: Some("https://edge.example.com".to_owned()),
                 directory_enrollment: false,
+                client_downloads: None,
             },
             false,
         );
@@ -908,6 +919,7 @@ mod tests {
                 display_download_step: true,
                 public_url: Some("http://edge.example.com".to_owned()),
                 directory_enrollment: false,
+                client_downloads: None,
             },
             true,
         );
@@ -936,6 +948,7 @@ mod tests {
                 display_download_step: true,
                 public_url: Some("http://edge.example.com".to_owned()),
                 directory_enrollment: false,
+                client_downloads: None,
             },
             true,
         );
@@ -946,6 +959,7 @@ mod tests {
             display_download_step: false,
             public_url: Some("not a URL".to_owned()),
             directory_enrollment: false,
+            client_downloads: None,
         });
         assert!(state.cookie_secure.load(Ordering::Relaxed));
         assert!(!state.display_password_reset.load(Ordering::Relaxed));
@@ -975,6 +989,7 @@ mod tests {
                     display_download_step: true,
                     public_url: Some("http://edge.example.com".to_owned()),
                     directory_enrollment: false,
+                    client_downloads: None,
                 },
                 true,
             );

@@ -4,14 +4,18 @@ import { useQuery } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { capitalCase } from 'change-case';
 import { QRCodeCanvas } from 'qrcode.react';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { m } from '../../../paraglide/messages';
+import {
+  buildClientDownloadLinks,
+  linuxDownloadItems,
+  mobileDownloadItems,
+} from '../../../shared/clientDownloads';
 import { ContactFooter } from '../../../shared/components/ContactFooter/ContactFooter';
 import { ContainerWithIcon } from '../../../shared/components/ContainerWithIcon/ContainerWithIcon';
 import { Page } from '../../../shared/components/Page/Page';
 import { EnrollmentStep } from '../../../shared/components/Step/Step';
-import { externalLink } from '../../../shared/consts';
-import { getClientArtifactsQueryOptions } from '../../../shared/query/queryOptions';
+import { getClientDownloadLinksQueryOptions } from '../../../shared/query/queryOptions';
 import { openClientLink } from '../../../shared/utils/openVirtualLink';
 import { Button } from '../../../shared/xguard-ui/components/Button/Button';
 import { CopyField } from '../../../shared/xguard-ui/components/CopyField/CopyField';
@@ -24,103 +28,39 @@ import type { MenuItemsGroup } from '../../../shared/xguard-ui/components/Menu/t
 import { SizedBox } from '../../../shared/xguard-ui/components/SizedBox/SizedBox';
 import { ThemeSpacing } from '../../../shared/xguard-ui/types';
 
-const AppleHelpModal = lazy(async () => ({
-  default: (await import('../../../shared/components/AppleHelpModal/AppleHelpModal'))
-    .AppleHelpModal,
-}));
-
 export const ConfigureClientPage = () => {
   const pageData = useLoaderData({
     from: '/client-setup',
   });
 
-  const { data: clientLinks } = useQuery(getClientArtifactsQueryOptions);
+  const { data: fetchedLinks } = useQuery(getClientDownloadLinksQueryOptions);
+  const links = fetchedLinks ?? buildClientDownloadLinks();
+  const mobileLinks = mobileDownloadItems(links);
 
-  const [appleHelpModalOpen, setAppleHelpModalOpen] = useState(false);
-
-  const appleMenu = useMemo(
+  const linuxMenu = useMemo(
     (): MenuItemsGroup[] => [
-      {
-        header: {
-          text: m.client_download_apple_help_header(),
-          onHelp: () => setAppleHelpModalOpen(true),
-        },
-        items: [
-          {
-            icon: 'apple',
-            text: 'Intel',
-            onClick: () => openClientLink(clientLinks?.macos_amd64),
-          },
-          {
-            icon: 'apple',
-            text: 'ARM',
-            onClick: () => openClientLink(clientLinks?.macos_arm64),
-          },
-        ],
-      },
-    ],
-    [clientLinks],
-  );
-
-  const linuxMenu = useMemo(() => {
-    const res: MenuItemsGroup[] = [
       {
         header: {
           text: `${capitalCase(m.misc_for())} Linux`,
         },
-        items: [
-          {
-            icon: 'ubuntu',
-            text: 'Ubuntu 24.04 ARM',
-            onClick: () => openClientLink(clientLinks?.deb_arm64),
-          },
-          {
-            icon: 'ubuntu',
-            text: 'Ubuntu 24.04 AMD64',
-            onClick: () => openClientLink(clientLinks?.deb_amd64),
-          },
-        ],
-      },
-      {
-        items: [
-          {
-            icon: 'debian',
-            text: 'Ubuntu 22.04 / Debian 12&13 ARM',
-            onClick: () => openClientLink(clientLinks?.deb_legacy_arm64),
-          },
-          {
-            icon: 'debian',
-            text: 'Ubuntu 22.04 / Debian 12&13 AMD64',
-            onClick: () => openClientLink(clientLinks?.deb_legacy_amd64),
-          },
-        ],
+        items: linuxDownloadItems(links).map((item) => ({
+          icon: item.id.startsWith('deb') ? 'ubuntu' : 'linux',
+          text: item.label,
+          onClick: () => openClientLink(item.href),
+        })),
       },
       {
         items: [
           {
             icon: 'linux',
-            text: 'RPM ARM',
-            onClick: () => openClientLink(clientLinks?.rpm_arm64),
-          },
-          {
-            icon: 'linux',
-            text: 'RPM AMD64',
-            onClick: () => openClientLink(clientLinks?.rpm_amd64),
+            text: m.client_download_all_downloads(),
+            onClick: () => openClientLink(links.releases),
           },
         ],
       },
-      {
-        items: [
-          {
-            icon: 'arch-linux',
-            text: 'Arch Linux',
-            onClick: () => openClientLink(externalLink.client.desktop.linux.arch),
-          },
-        ],
-      },
-    ];
-    return res;
-  }, [clientLinks]);
+    ],
+    [links],
+  );
 
   const [manualOpen, setManualOpen] = useState(false);
 
@@ -165,13 +105,23 @@ export const ConfigureClientPage = () => {
           <div className="download">
             <p>{m.client_setup_download_label()}</p>
             <a
-              href={clientLinks?.windows_amd64 ?? externalLink.xguard.download}
+              href={links.windowsX64}
               target="_blank"
               rel="noopener noreferrer"
+              title="Windows (x64, .msi)"
+              data-testid="download-windows"
             >
               <IconButton icon="windows" />
             </a>
-            <IconButtonMenu icon="apple" menuItems={appleMenu} />
+            <a
+              href={links.macosUniversal}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="macOS (.dmg)"
+              data-testid="download-macos"
+            >
+              <IconButton icon="apple" />
+            </a>
             <IconButtonMenu icon="linux" menuItems={linuxMenu} />
           </div>
         </div>
@@ -220,33 +170,28 @@ export const ConfigureClientPage = () => {
               <div className="qr">
                 <QRCodeCanvas value={qrData()} size={100} />
               </div>
-              <div className="download">
-                <p>{m.client_setup_mobile_forgot()}</p>
-                <div className="links">
-                  <a
-                    href={externalLink.client.mobile.google}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="outlined"
-                      iconLeft="android"
-                      text={m.client_setup_mobile_google()}
-                    />
-                  </a>
-                  <a
-                    href={externalLink.client.mobile.apple}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="outlined"
-                      iconLeft="apple"
-                      text={m.client_setup_mobile_apple()}
-                    />
-                  </a>
+              {mobileLinks.length > 0 && (
+                <div className="download">
+                  <p>{m.client_setup_mobile_forgot()}</p>
+                  <div className="links">
+                    {mobileLinks.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid={`download-${item.id}`}
+                      >
+                        <Button
+                          variant="outlined"
+                          iconLeft={item.id === 'android' ? 'android' : 'apple'}
+                          text={item.label}
+                        />
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </ContainerWithIcon>
         </>
@@ -255,14 +200,6 @@ export const ConfigureClientPage = () => {
         <p className="finish">{m.client_setup_footer_extra()}</p>
         <ContactFooter email={pageData.enrollmentData.admin.email} />
       </footer>
-      <Suspense fallback={null}>
-        <AppleHelpModal
-          isOpen={appleHelpModalOpen}
-          onClose={() => {
-            setAppleHelpModalOpen(false);
-          }}
-        />
-      </Suspense>
     </Page>
   );
 };

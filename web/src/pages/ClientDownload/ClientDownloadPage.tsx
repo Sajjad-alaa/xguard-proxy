@@ -6,13 +6,17 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { m } from '../../paraglide/messages';
+import {
+  buildClientDownloadLinks,
+  linuxDownloadItems,
+  mobileDownloadItems,
+} from '../../shared/clientDownloads';
 import { Page } from '../../shared/components/Page/Page';
 import { PageNavigation } from '../../shared/components/PageNavigation/PageNavigation';
 import { EnrollmentStep } from '../../shared/components/Step/Step';
-import { externalLink } from '../../shared/consts';
-import { getClientArtifactsQueryOptions } from '../../shared/query/queryOptions';
+import { getClientDownloadLinksQueryOptions } from '../../shared/query/queryOptions';
 import { openClientLink } from '../../shared/utils/openVirtualLink';
 import { Button } from '../../shared/xguard-ui/components/Button/Button';
 import { ButtonMenu } from '../../shared/xguard-ui/components/ButtonMenu/MenuButton';
@@ -31,13 +35,10 @@ import laptopIcon from './assets/laptop.png';
 import linuxIcon from './assets/linux.png';
 import desktopIcon from './assets/pc-tower.png';
 
-const AppleHelpModal = lazy(async () => ({
-  default: (await import('../../shared/components/AppleHelpModal/AppleHelpModal'))
-    .AppleHelpModal,
-}));
-
 export const ClientDownloadPage = () => {
-  const { data: pageData } = useQuery(getClientArtifactsQueryOptions);
+  const { data: fetchedLinks } = useQuery(getClientDownloadLinksQueryOptions);
+  const links = fetchedLinks ?? buildClientDownloadLinks();
+  const mobileLinks = mobileDownloadItems(links);
   const { enrollmentState } = useLoaderData({
     from: '/download',
   });
@@ -46,88 +47,28 @@ export const ClientDownloadPage = () => {
   const navigate = useNavigate();
 
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [appleHelpModalOpen, setAppleHelpModalOpen] = useState(false);
 
-  const appleMenu = useMemo(
-    (): MenuItemsGroup[] => [
+  const linuxMenu: MenuItemsGroup[] = useMemo(
+    () => [
       {
-        header: {
-          text: m.client_download_apple_help_header(),
-          onHelp: () => {
-            setAppleHelpModalOpen(true);
-          },
-        },
+        items: linuxDownloadItems(links).map((item) => ({
+          icon: item.id.startsWith('deb') ? 'ubuntu' : 'linux',
+          text: item.label,
+          onClick: () => openClientLink(item.href),
+        })),
+      },
+      {
         items: [
           {
-            text: 'Intel',
-            onClick: () => openClientLink(pageData?.macos_amd64),
-          },
-          {
-            text: 'ARM',
-            onClick: () => openClientLink(pageData?.macos_arm64),
+            icon: 'linux',
+            text: m.client_download_all_downloads(),
+            onClick: () => openClientLink(links.releases),
           },
         ],
       },
     ],
-    [pageData],
+    [links],
   );
-
-  const linuxMenu: MenuItemsGroup[] = useMemo(() => {
-    const res: MenuItemsGroup[] = [
-      {
-        items: [
-          {
-            icon: 'ubuntu',
-            text: 'Ubuntu 24.04 ARM',
-            onClick: () => openClientLink(pageData?.deb_arm64),
-          },
-          {
-            icon: 'ubuntu',
-            text: 'Ubuntu 24.04 AMD64',
-            onClick: () => openClientLink(pageData?.deb_amd64),
-          },
-        ],
-      },
-      {
-        items: [
-          {
-            icon: 'debian',
-            text: 'Ubuntu 22.04 / Debian 12&13 ARM',
-            onClick: () => openClientLink(pageData?.deb_legacy_arm64),
-          },
-          {
-            icon: 'debian',
-            text: 'Ubuntu 22.04 / Debian 12&13 AMD64',
-            onClick: () => openClientLink(pageData?.deb_legacy_amd64),
-          },
-        ],
-      },
-      {
-        items: [
-          {
-            icon: 'linux',
-            text: 'RPM ARM',
-            onClick: () => openClientLink(pageData?.rpm_arm64),
-          },
-          {
-            icon: 'linux',
-            text: 'RPM AMD64',
-            onClick: () => openClientLink(pageData?.rpm_amd64),
-          },
-        ],
-      },
-      {
-        items: [
-          {
-            icon: 'arch-linux',
-            text: 'Arch Linux',
-            onClick: () => openClientLink(externalLink.client.desktop.linux.arch),
-          },
-        ],
-      },
-    ];
-    return res;
-  }, [pageData]);
 
   return (
     <Page id="client-download-page" nav>
@@ -150,7 +91,7 @@ export const ClientDownloadPage = () => {
           })}
           buttonText={m.client_download_for({ platform: 'Windows' })}
           buttonIconKind="windows"
-          directLink={pageData?.windows_amd64}
+          directLink={links.windowsX64}
           icon={desktopIcon}
         />
         <Platform
@@ -170,55 +111,51 @@ export const ClientDownloadPage = () => {
           })}
           buttonText={m.client_download_for({ platform: 'Mac' })}
           buttonIconKind="app-store"
-          menuItems={appleMenu}
+          directLink={links.macosUniversal}
           icon={laptopIcon}
         />
       </div>
       <SizedBox height={ThemeSpacing.Xl3} />
-      {enrollmentState.enrollmentData.user.enrolled && (
+      {mobileLinks.length > 0 && enrollmentState.enrollmentData.user.enrolled && (
         <div className="platforms">
           <div className="label">
             <Icon icon="mobile" size={20} /> <p>{m.client_download_label_mobile()}</p>
           </div>
-          <Platform
-            testId="android"
-            title={m.client_download_for({ platform: 'Android' })}
-            subtitle={m.client_download_supports_newer({
-              platform: 'Android 12.0 (Snow Cone)',
-            })}
-            buttonText={m.client_download_for({ platform: 'Android' })}
-            buttonIconKind="android"
-            directLink={externalLink.client.mobile.google}
-            icon={androidIcon}
-          />
-          <Platform
-            testId="iOS"
-            title={m.client_download_for({ platform: 'iOS' })}
-            subtitle={m.client_download_supports_newer({
-              platform: 'iOS 15+',
-            })}
-            buttonText={m.client_download_for({ platform: 'iOS' })}
-            buttonIconKind="apple"
-            directLink={externalLink.client.mobile.apple}
-            icon={iosIcon}
-          />
+          {links.android && (
+            <Platform
+              testId="android"
+              title={m.client_download_for({ platform: 'Android' })}
+              subtitle={m.client_download_supports_newer({
+                platform: 'Android 12.0 (Snow Cone)',
+              })}
+              buttonText={m.client_download_for({ platform: 'Android' })}
+              buttonIconKind="android"
+              directLink={links.android}
+              icon={androidIcon}
+            />
+          )}
+          {links.ios && (
+            <Platform
+              testId="iOS"
+              title={m.client_download_for({ platform: 'iOS' })}
+              subtitle={m.client_download_supports_newer({
+                platform: 'iOS 15+',
+              })}
+              buttonText={m.client_download_for({ platform: 'iOS' })}
+              buttonIconKind="apple"
+              directLink={links.ios}
+              icon={iosIcon}
+            />
+          )}
         </div>
       )}
-      {!enrollmentState.enrollmentData.user.enrolled && (
+      {mobileLinks.length > 0 && !enrollmentState.enrollmentData.user.enrolled && (
         <InfoBanner
           variant="warning"
           icon="warning-outlined"
           text={m.client_download_mobile_warning()}
         />
       )}
-      <Suspense fallback={null}>
-        <AppleHelpModal
-          isOpen={appleHelpModalOpen}
-          onClose={() => {
-            setAppleHelpModalOpen(false);
-          }}
-        />
-      </Suspense>
       <Modal
         title={m.client_download_modal_title()}
         size="small"

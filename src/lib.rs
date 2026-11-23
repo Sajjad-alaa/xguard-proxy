@@ -6,6 +6,7 @@ use xguard_version::Version;
 use crate::proto::LogEntry;
 
 mod acme;
+pub(crate) mod client_downloads;
 pub mod assets;
 pub mod config;
 mod error;
