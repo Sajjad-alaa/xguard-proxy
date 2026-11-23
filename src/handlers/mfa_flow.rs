@@ -56,7 +56,8 @@ fn mfa_flow_socket_response(response: &MfaFlowRemoteResponse) -> Option<MfaFlowS
     match response.outcome.as_ref()? {
         mfa_flow_remote_response::Outcome::Result(result) => match result.outcome.as_ref() {
             Some(mfa_step_result::Outcome::Advanced(_))
-            | Some(mfa_step_result::Outcome::Completed(_)) => {
+            | Some(mfa_step_result::Outcome::Completed(_))
+            | Some(mfa_step_result::Outcome::RadiusChallenge(_)) => {
                 Some(MfaFlowSocketResponse::MfaResult { result })
             }
             Some(mfa_step_result::Outcome::AwaitingExternal(_)) | None => None,
@@ -291,5 +292,32 @@ mod tests {
         ));
 
         assert!(mfa_flow_socket_response(&response).is_none());
+    }
+
+    #[test]
+    fn test_radius_challenge_serializes_as_mfa_result() {
+        let response = response(mfa_step_result::Outcome::RadiusChallenge(
+            crate::proto::MfaRadiusChallenge {
+                message: "Enter SMS code".into(),
+                push: true,
+                poll_interval_secs: 2,
+            },
+        ));
+
+        assert_eq!(
+            serialized(&response),
+            serde_json::json!({
+                "type": "mfa_result",
+                "result": {
+                    "outcome": {
+                        "RadiusChallenge": {
+                            "message": "Enter SMS code",
+                            "push": true,
+                            "poll_interval_secs": 2
+                        }
+                    }
+                }
+            })
+        );
     }
 }
