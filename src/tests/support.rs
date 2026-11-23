@@ -51,6 +51,7 @@ pub(crate) fn test_public_settings(public_url: Option<&str>) -> PublicSettings {
         display_download_step: true,
         public_url: public_url.map(str::to_owned),
         directory_enrollment: false,
+        client_downloads: None,
     }
 }
 

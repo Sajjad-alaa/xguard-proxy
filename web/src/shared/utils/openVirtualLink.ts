@@ -1,7 +1,7 @@
-import { externalLink } from '../consts';
+import { defaultClientDownloadSettings } from '../clientDownloads';
 
 export const openClientLink = (value?: string): void => {
-  const href = value ?? externalLink.xguard.download;
+  const href = value ?? defaultClientDownloadSettings.releases_url;
   openVirtualLink(href);
 };
 

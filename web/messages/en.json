@@ -126,5 +126,6 @@
   "server_warning_setup_subtitle": "Edge setup is not complete yet. Please contact your administrator.",
   "server_warning_disconnected_title": "Core is disconnected",
   "server_warning_disconnected_subtitle": "Edge is configured, but it is not connected to XGuard Core. Please contact your administrator.",
-  "server_warning_retry": "Try again"
+  "server_warning_retry": "Try again",
+  "client_download_all_downloads": "All downloads"
 }

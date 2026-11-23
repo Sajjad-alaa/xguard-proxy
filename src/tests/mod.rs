@@ -1,3 +1,4 @@
+mod client_downloads;
 mod cookies;
 mod directory_enrollment;
 mod mfa_config;

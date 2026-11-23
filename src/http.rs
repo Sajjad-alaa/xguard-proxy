@@ -48,6 +48,7 @@ use xguard_version::{Version, server::XGuardVersionLayer};
 use crate::{
     LogsReceiver, VERSION,
     assets::{index, web_asset},
+    client_downloads::ClientDownloadLinks,
     config::{EnvConfig, IpCidr},
     error::ApiError,
     grpc::{ProxyServer, TlsConfig},
@@ -256,6 +257,8 @@ struct AppInfo {
     display_password_reset: bool,
     display_download_step: bool,
     display_directory_enrollment: bool,
+    /// Where the download pages link to (Core's "Client downloads" setting).
+    client_downloads: ClientDownloadLinks,
 }
 
 async fn app_info(State(state): State<AppState>) -> Result<Json<AppInfo>, ApiError> {
@@ -280,6 +283,13 @@ async fn app_info(State(state): State<AppState>) -> Result<Json<AppInfo>, ApiErr
             .public_settings
             .directory_enrollment
             .load(Ordering::Relaxed),
+        client_downloads: state
+            .grpc_server
+            .public_settings
+            .client_downloads
+            .read()
+            .expect("Failed to lock client download links")
+            .clone(),
     }))
 }
 

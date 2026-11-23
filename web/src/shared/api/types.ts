@@ -1,4 +1,5 @@
 import type { AxiosError } from 'axios';
+import type { ClientDownloadSettings } from '../clientDownloads';
 import type { ExternalProviderButtonProps } from '../xguard-ui/components/ExternalProviderButton/types';
 
 export type EmptyApiResponse = Record<never, never>;
@@ -36,6 +37,8 @@ export type AppInfo = {
   display_download_step: boolean;
   /** Directory users may start enrollment with their directory password. */
   display_directory_enrollment?: boolean;
+  /** Core's "Client downloads" setting; absent from older Edges. */
+  client_downloads?: ClientDownloadSettings;
 };
 
 export type DirectoryEnrollmentRequest = {
