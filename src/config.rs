@@ -94,6 +94,17 @@ impl<'de> Deserialize<'de> for IpCidr {
     }
 }
 
+/// Loopback and private (RFC 1918 and unique local) networks.
+const DEFAULT_TRUSTED_PROXIES: &str =
+    "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7";
+
+fn default_trusted_proxies() -> Vec<IpCidr> {
+    DEFAULT_TRUSTED_PROXIES
+        .split(',')
+        .map(|cidr| cidr.parse().expect("valid default trusted proxy"))
+        .collect()
+}
+
 fn default_http_port() -> u16 {
     8080
 }
@@ -230,9 +241,16 @@ pub struct EnvConfig {
     pub adoption_timeout: u64,
 
     /// Comma-separated list of trusted reverse proxy IPs or CIDRs whose forwarding headers
-    /// (`Forwarded`, `X-Forwarded-For`) are honored for client IP extraction.
-    #[arg(long, env = "XGUARD_PROXY_TRUSTED_PROXIES", value_delimiter = ',')]
-    #[serde(default)]
+    /// (`Forwarded`, `X-Forwarded-For`) are honored for client IP extraction. Defaults to
+    /// loopback and private networks, so a reverse proxy next to Edge works out of the box while
+    /// clients connecting from the internet cannot choose their own IP.
+    #[arg(
+        long,
+        env = "XGUARD_PROXY_TRUSTED_PROXIES",
+        value_delimiter = ',',
+        default_value = DEFAULT_TRUSTED_PROXIES
+    )]
+    #[serde(default = "default_trusted_proxies")]
     pub trusted_proxies: Vec<IpCidr>,
 
     /// Optional shared secret required on the initial gRPC adoption handshake (`ProxySetup::Start`).
@@ -308,6 +326,7 @@ mod tests {
 
     use super::{
         DEFAULT_GRPC_KEEPALIVE_INTERVAL_SECONDS, DEFAULT_GRPC_KEEPALIVE_TIMEOUT_SECONDS, EnvConfig,
+        default_trusted_proxies,
     };
 
     #[test]
@@ -400,7 +419,21 @@ mod tests {
         let defaults: EnvConfig = toml::from_str("").expect("empty TOML should parse");
         assert_eq!(defaults.rate_limit_per_second, 20);
         assert_eq!(defaults.rate_limit_burst, 60);
-        assert!(defaults.trusted_proxies.is_empty());
+        assert_eq!(defaults.trusted_proxies, default_trusted_proxies());
+        let trusted = |ip: &str| {
+            defaults
+                .trusted_proxies
+                .iter()
+                .any(|net| net.contains(ip.parse().unwrap()))
+        };
+        for ip in ["127.0.0.1", "::1", "10.1.2.3", "172.20.0.2", "192.168.1.1", "fd00::5"] {
+            assert!(trusted(ip), "{ip} should be trusted by default");
+        }
+        for ip in ["203.0.113.7", "172.32.0.1", "2001:db8::1", "8.8.8.8"] {
+            assert!(!trusted(ip), "{ip} must not be trusted by default");
+        }
+        let cli_defaults = EnvConfig::try_parse_from(["edge"]).unwrap();
+        assert_eq!(cli_defaults.trusted_proxies, default_trusted_proxies());
 
         let parsed = EnvConfig::try_parse_from([
             "edge",

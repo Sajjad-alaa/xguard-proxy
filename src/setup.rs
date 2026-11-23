@@ -32,6 +32,9 @@ use crate::{
 };
 
 const AUTH_HEADER: &str = "authorization";
+/// Metadata key Core uses to send this Edge's `XGUARD_PROXY_ADOPTION_TOKEN`. It is separate from
+/// the bearer token, which Core generates fresh for every setup session.
+const ADOPTION_TOKEN_HEADER: &str = "x-xguard-adoption-token";
 
 pub const GRPC_CERT_NAME: &str = "proxy_grpc_cert.pem";
 pub const GRPC_KEY_NAME: &str = "proxy_grpc_key.pem";
@@ -419,11 +422,16 @@ impl proxy_setup_server::ProxySetup for ProxySetupServer {
             .and_then(|s| s.strip_prefix("Bearer "))
             .ok_or_else(|| Status::unauthenticated("Missing or invalid authorization token"))?;
 
-        if let Some(expected) = &self.expected_adoption_token
-            && !constant_time_eq(token, expected)
-        {
-            error!("Rejected setup Start request with invalid adoption token");
-            return Err(Status::unauthenticated("Invalid adoption token"));
+        if let Some(expected) = &self.expected_adoption_token {
+            let presented = request
+                .metadata()
+                .get(ADOPTION_TOKEN_HEADER)
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or_default();
+            if !constant_time_eq(presented, expected) {
+                error!("Rejected setup Start request with a missing or invalid adoption token");
+                return Err(Status::unauthenticated("Missing or invalid adoption token"));
+            }
         }
 
         debug!("Setup session authenticated successfully");
@@ -733,19 +741,25 @@ mod tests {
     async fn start_enforces_expected_adoption_token() {
         let server = test_server(Some("expected-secret".to_owned()));
 
-        let mut wrong_req = Request::new(());
-        wrong_req
-            .metadata_mut()
-            .insert(AUTH_HEADER, "Bearer wrong-secret".parse().unwrap());
-        let Err(err) = server.start(wrong_req).await else {
-            panic!("mismatched adoption token must be rejected");
+        // Core's bearer token is a fresh per-session token, never the adoption token.
+        let request = |adoption_token: Option<&str>| {
+            let mut req = Request::new(());
+            req.metadata_mut()
+                .insert(AUTH_HEADER, "Bearer per-session-jwt".parse().unwrap());
+            if let Some(token) = adoption_token {
+                req.metadata_mut()
+                    .insert(ADOPTION_TOKEN_HEADER, token.parse().unwrap());
+            }
+            req
         };
-        assert_eq!(err.code(), tonic::Code::Unauthenticated);
 
-        let mut ok_req = Request::new(());
-        ok_req
-            .metadata_mut()
-            .insert(AUTH_HEADER, "Bearer expected-secret".parse().unwrap());
-        assert!(server.start(ok_req).await.is_ok());
+        for wrong in [None, Some("wrong-secret"), Some("expected-secre")] {
+            let Err(err) = server.start(request(wrong)).await else {
+                panic!("adoption token {wrong:?} must be rejected");
+            };
+            assert_eq!(err.code(), tonic::Code::Unauthenticated);
+        }
+
+        assert!(server.start(request(Some("expected-secret"))).await.is_ok());
     }
 }

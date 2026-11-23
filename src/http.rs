@@ -750,7 +750,7 @@ pub async fn run_server(
         .key_extractor(TrustedIpKeyExtractor {
             trusted_proxies: Arc::clone(&trusted_proxies),
         })
-        .per_second(env_config.rate_limit_per_second)
+        .period(replenish_period(env_config.rate_limit_per_second))
         .burst_size(env_config.rate_limit_burst)
         .finish();
 
@@ -1101,5 +1101,30 @@ mod tests {
             assert_eq!(cookie.secure(), Some(secure));
             assert_eq!(cookie.path(), Some("/api/v1/session"));
         }
+    }
+}
+
+/// How often one request is added back to a client's allowance, for a limit of
+/// `requests_per_second`. Zero (rate limiting off) gives a zero period, which turns the limiter off.
+/// Note: `GovernorConfigBuilder::per_second` takes the seconds *between* replenishments, not a rate.
+fn replenish_period(requests_per_second: u64) -> std::time::Duration {
+    if requests_per_second == 0 {
+        return std::time::Duration::ZERO;
+    }
+    std::time::Duration::from_nanos((1_000_000_000 / requests_per_second).max(1))
+}
+
+#[cfg(test)]
+mod replenish_period_tests {
+    use std::time::Duration;
+
+    use super::replenish_period;
+
+    #[test]
+    fn replenish_period_is_the_inverse_of_the_rate() {
+        assert_eq!(replenish_period(0), Duration::ZERO);
+        assert_eq!(replenish_period(1), Duration::from_secs(1));
+        assert_eq!(replenish_period(20), Duration::from_millis(50));
+        assert_eq!(replenish_period(u64::MAX), Duration::from_nanos(1));
     }
 }
