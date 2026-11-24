@@ -21,6 +21,8 @@ async fn test_posture_connect_forwards_facts_and_returns_key() {
             assert_eq!(facts.disk_encrypted, Some(true));
             assert_eq!(facts.firewall_enabled, None);
             assert_eq!(facts.kernel_version.as_deref(), Some("6.8.0"));
+            // An older client sends no facts revision.
+            assert_eq!(facts.facts_revision, 0);
             core_response::Payload::PostureConnect(PostureConnectResponse {
                 preshared_key: "psk".into(),
             })
@@ -47,6 +49,44 @@ async fn test_posture_connect_forwards_facts_and_returns_key() {
     .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body, json!({"preshared_key": "psk"}));
+}
+
+#[tokio::test]
+async fn test_posture_connect_forwards_all_platform_facts() {
+    let app = app_with_fake_core(|payload| match payload {
+        core_request::Payload::PostureConnect(request) => {
+            let facts = request.posture.expect("facts are forwarded");
+            assert_eq!(facts.os, PostureOs::Macos as i32);
+            assert_eq!(facts.facts_revision, 2);
+            assert_eq!(facts.antivirus_enabled, Some(true));
+            assert_eq!(facts.domain_joined, Some(false));
+            assert_eq!(facts.security_update_age_days, Some(12));
+            core_response::Payload::PostureConnect(PostureConnectResponse {
+                preshared_key: "psk".into(),
+            })
+        }
+        _ => panic!("unexpected Core request"),
+    });
+
+    let (status, _) = post_json(
+        &app,
+        "/api/v1/posture/connect",
+        &json!({
+            "location_id": 3,
+            "pubkey": "device-public-key",
+            "token": "polling-token",
+            "posture": {
+                "os": PostureOs::Macos as i32,
+                "client_version": "2.4.0",
+                "antivirus_enabled": true,
+                "domain_joined": false,
+                "security_update_age_days": 12,
+                "facts_revision": 2,
+            },
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
 }
 
 #[tokio::test]
